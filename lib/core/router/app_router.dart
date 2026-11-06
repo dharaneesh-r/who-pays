@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/detector/presentation/detector_debug_screen.dart';
 import '../../features/game/presentation/game_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
+import '../../features/room/presentation/host_setup_screen.dart';
+import '../../features/room/presentation/join_room_screen.dart';
+import '../../features/room/presentation/room_lobby_screen.dart';
 import '../../features/stats/presentation/stats_screen.dart';
 
 final appRouter = GoRouter(
@@ -15,6 +18,18 @@ final appRouter = GoRouter(
     GoRoute(
       path: GameScreen.path,
       builder: (_, _) => const GameScreen(),
+    ),
+    GoRoute(
+      path: HostSetupScreen.path,
+      builder: (_, _) => const HostSetupScreen(),
+    ),
+    GoRoute(
+      path: JoinRoomScreen.path,
+      builder: (_, _) => const JoinRoomScreen(),
+    ),
+    GoRoute(
+      path: RoomLobbyScreen.path,
+      builder: (_, _) => const RoomLobbyScreen(),
     ),
     GoRoute(
       path: StatsScreen.path,

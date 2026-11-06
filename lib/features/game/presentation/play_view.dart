@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../room/application/room_session.dart';
+import '../../room/presentation/live_standings.dart';
 import '../application/game_controller.dart';
 import '../domain/game_models.dart';
 
@@ -17,6 +19,7 @@ class PlayView extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
 
     final settling = state.phase == RoundPhase.settling;
+    final inRoom = ref.watch(roomSessionProvider).inRoom;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -84,6 +87,10 @@ class PlayView extends ConsumerWidget {
               ],
             ),
           const Spacer(),
+          if (inRoom) ...[
+            const LiveStandings(),
+            const SizedBox(height: 20),
+          ],
           Text(
             'Loser ${state.config.stakeText}',
             textAlign: TextAlign.center,

@@ -4,9 +4,25 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/feedback/alarm_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../room/application/room_session.dart';
+import '../../room/presentation/live_standings.dart';
 import '../../detector/domain/detector_models.dart';
 import '../application/game_controller.dart';
 import '../domain/game_models.dart';
+
+/// Who owes what. Solo rounds only know about this phone; at a table the room
+/// decides, because the loser is whoever was first — not everyone who cracked.
+String _verdict({
+  required bool caught,
+  required String stakeText,
+  required String? loserName,
+  required bool youLost,
+}) {
+  if (loserName == null) {
+    return caught ? 'So you $stakeText.' : 'Somebody else $stakeText.';
+  }
+  return youLost ? 'You cracked first — you $stakeText.' : '$loserName $stakeText.';
+}
 
 class ResultView extends ConsumerWidget {
   const ResultView({super.key});
@@ -20,6 +36,13 @@ class ResultView extends ConsumerWidget {
 
     final caught = result?.outcome == RoundOutcome.caught;
     final color = caught ? AppTheme.danger : AppTheme.safe;
+
+    // At a table, being caught is not the same as losing — the loser is
+    // whoever cracked *first*, which only the room knows.
+    final session = ref.watch(roomSessionProvider);
+    final loser = session.snapshot?.loser;
+    final loserName = loser?.name;
+    final youLost = loser != null && loser.deviceId == session.deviceId;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -56,13 +79,20 @@ class ResultView extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              caught
-                  ? 'So you ${state.config.stakeText}.'
-                  : 'Somebody else ${state.config.stakeText}.',
+              _verdict(
+                caught: caught,
+                stakeText: state.config.stakeText,
+                loserName: loserName,
+                youLost: youLost,
+              ),
               textAlign: TextAlign.center,
               style: text.titleMedium,
             ),
           ),
+          if (session.inRoom) ...[
+            const SizedBox(height: 20),
+            const LiveStandings(),
+          ],
           const Spacer(),
           // The siren loops until someone acknowledges it. That is deliberate —
           // but it needs one obvious way to stop without leaving the screen.

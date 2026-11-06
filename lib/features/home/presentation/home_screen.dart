@@ -1,19 +1,24 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../data/remote/supabase_init.dart';
 import '../../detector/presentation/detector_debug_screen.dart';
 import '../../game/presentation/game_screen.dart';
+import '../../room/presentation/host_setup_screen.dart';
+import '../../room/presentation/join_room_screen.dart';
 import '../../stats/presentation/stats_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   static const path = '/';
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
+    final online = ref.watch(supabaseReadyProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -23,7 +28,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              Text('WHO\nPAYS?', style: text.displayLarge, textAlign: TextAlign.left),
+              Text('WHO\nPAYS?', style: text.displayLarge),
               const SizedBox(height: 12),
               Text(
                 'Phones face down. First one to pick up loses.',
@@ -31,20 +36,33 @@ class HomeScreen extends StatelessWidget {
               ),
               const Spacer(),
               FilledButton(
-                onPressed: () => context.push(GameScreen.path),
-                child: const Text('START A GAME'),
+                onPressed: () => context.push(HostSetupScreen.path),
+                child: const Text('HOST A TABLE'),
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: null, // Phase 5
+                onPressed: () => context.push(JoinRoomScreen.path),
                 child: const Text('JOIN WITH CODE'),
               ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.push(GameScreen.path),
+                child: const Text('JUST ME'),
+              ),
+              if (!online) ...[
+                const SizedBox(height: 10),
+                Text(
+                  'Offline — only solo rounds work right now',
+                  textAlign: TextAlign.center,
+                  style: text.bodyMedium
+                      ?.copyWith(color: Colors.white38, fontSize: 13),
+                ),
+              ],
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () => context.push(StatsScreen.path),
                 child: const Text('My record'),
               ),
-              const SizedBox(height: 12),
               if (kDebugMode)
                 TextButton(
                   onPressed: () => context.push(DetectorDebugScreen.path),

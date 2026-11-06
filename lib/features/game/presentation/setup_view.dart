@@ -6,7 +6,12 @@ import '../domain/game_models.dart';
 
 /// Two decisions, then play. Anything more and the table loses interest.
 class SetupView extends ConsumerWidget {
-  const SetupView({super.key});
+  const SetupView({super.key, this.onStart, this.actionLabel = 'PHONES DOWN'});
+
+  /// Overridden when hosting a table: the same two choices create a room
+  /// instead of starting a solo round.
+  final void Function(GameConfig config)? onStart;
+  final String actionLabel;
 
   static const _targets = <Duration?>[
     Duration(minutes: 15),
@@ -81,8 +86,10 @@ class SetupView extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           FilledButton(
-            onPressed: controller.start,
-            child: const Text('PHONES DOWN'),
+            onPressed: () => onStart == null
+                ? controller.start()
+                : onStart!(state.config),
+            child: Text(actionLabel),
           ),
           const SizedBox(height: 16),
         ],
