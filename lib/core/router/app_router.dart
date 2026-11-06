@@ -8,11 +8,11 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(
       path: HomeScreen.path,
-      builder: (_, __) => const HomeScreen(),
+      builder: (_, _) => const HomeScreen(),
     ),
     GoRoute(
       path: DetectorDebugScreen.path,
-      builder: (_, __) => const DetectorDebugScreen(),
+      builder: (_, _) => const DetectorDebugScreen(),
     ),
   ],
 );

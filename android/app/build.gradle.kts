@@ -8,7 +8,8 @@ plugins {
 android {
     namespace = "in.nearle.who_pays"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // No plugin in this project compiles native code, so the NDK is not needed.
+    // Restore `ndkVersion = flutter.ndkVersion` if a future plugin requires it.
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

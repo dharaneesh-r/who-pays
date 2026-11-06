@@ -125,7 +125,7 @@ person. Table is the only candidate where that happens naturally, at the table, 
 | Join | `qr_flutter` (host) + `mobile_scanner` (guest) |
 | Guest web join | Static page on **Cloudflare Pages** — DeviceMotion API + Page Visibility API |
 | Realtime | **Supabase Realtime** — room, presence, "caught" events |
-| Local DB | **Drift (SQLite)** — tallies, history, stats |
+| Local DB | **sqflite** — tallies, history, stats. *(Not Drift: `sqlite3_flutter_libs` compiles SQLite from source and needs the 2.6 GB NDK; sqflite uses Android’s built-in SQLite, no native build.)* |
 | Share | `screenshot` + `share_plus` |
 | Money | `google_mobile_ads`, `in_app_purchase` (skip RevenueCat at v1) |
 | Analytics | Firebase Analytics + Crashlytics (day 1), AppsFlyer (only when paid spend starts) |
