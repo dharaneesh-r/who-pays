@@ -21,10 +21,10 @@ Status as of 2026-11-06. Context: [CONTEXT.md](CONTEXT.md)
 | 10 | Guest web join page | ✅ (written, not deployed) |
 | 11 | IAP, ads, icon, release signing | ✅ (test ad ids, no keystore yet) |
 
-**Verified:** 83 unit tests passing · `flutter analyze` clean · debug APK builds ·
+**Verified:** 83 unit tests passing · `flutter analyze` clean · **debug APK builds** · **release APKs build** (arm64 27.6 MB, arm 23.8 MB, x86_64 29.9 MB) · 49 Dart files.
 49 Dart files · 12 commits.
 
-**Not verified:** nothing has run on a physical device. No round, siren, room or
+**Not verified:** nothing has run on a physical device. No round, siren, room or purchase has ever executed. The `.aab` builds but Flutter cannot strip native debug symbols without the NDK, so it exits non-zero — install the NDK before the real release.
 purchase has ever executed.
 
 ---
