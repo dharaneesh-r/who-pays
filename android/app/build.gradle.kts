@@ -20,8 +20,11 @@ if (hasReleaseKey) {
 android {
     namespace = "in.nearle.who_pays"
     compileSdk = flutter.compileSdkVersion
-    // No plugin in this project compiles native code, so the NDK is not needed.
-    // Restore `ndkVersion = flutter.ndkVersion` if a future plugin requires it.
+    // Pinned rather than `flutter.ndkVersion` (28.2.x), because this is the
+    // version AGP defaults to and the one installed here. No plugin compiles
+    // native code; the NDK is needed only so release builds can strip debug
+    // symbols from the prebuilt .so files with llvm-strip.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
