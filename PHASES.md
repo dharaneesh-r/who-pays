@@ -1,77 +1,102 @@
 # BUILD PHASES — "Who Pays?"
 
-End-to-end phase list. Work phase by phase; each one ends in something you can actually test.
-Context: [CONTEXT.md](CONTEXT.md)
+Status as of 2026-11-06. Context: [CONTEXT.md](CONTEXT.md)
+
+## Progress
+
+**5 of 12 phases done. 7 pending.**
+
+| # | Phase | Status | Blocked by |
+|---|---|---|---|
+| 0 | Project setup | ✅ Done | — |
+| 1 | Pick-up detector | ✅ Done | — |
+| 2 | Round loop (setup/play/result) | ✅ Done | — |
+| 3 | Siren, haptics, wakelock | ✅ Done | — |
+| 4 | Storage, history, tallies | ✅ Done | — |
+| 5 | Supabase rooms + realtime | ⛔ Blocked | **Supabase URL + anon key** |
+| 6 | QR join | ⛔ Blocked | Phase 5 |
+| 7 | Result card + share | 🟢 Ready now | Nothing |
+| 8 | Table Talk cards | 🟢 Ready now | Nothing |
+| 9 | Streak mode | 🟢 Ready now | Nothing |
+| 10 | Guest web join page | ⛔ Blocked | Phase 5 + **Cloudflare account** |
+| 11 | Money, analytics, release build | ⛔ Blocked | **AdMob + Firebase + Play account + keystore** |
+| — | Verify APK on a real device | ⛔ Blocked | **Disk space + an Android phone** |
+
+Verified so far: 32 unit tests passing, `flutter analyze` clean, 5 commits.
+Not verified: nothing has run on a real phone yet.
 
 ---
 
-## Overnight reality check
+## What you need to get, and when
 
-| Question | Honest answer |
-|---|---|
-| Can the whole app be built in one day? | No. ~17 hours of work total. |
-| What **can** be done in one long day? | **Phases 0–6 (~9 h) = a fully playable multiplayer game on 3 real phones.** That is a real, demoable product. |
-| What must wait? | Phases 7–11 (polish, money, guest web, release build) — a second day. |
-| What *cannot* be compressed at all? | Play Store: $25 signup, then a **12-tester closed test for 14 calendar days** before production. Start that clock the day the AAB builds. Also: detection-threshold tuning needs days of real-world use. |
+### Blocking right now
 
-**Target for tonight: end of Phase 6.** If you're flying, continue into 7–8.
+| What | Unlocks | Cost | How long |
+|---|---|---|---|
+| **Supabase project** — URL + anon key | Phases 5, 6, 10 | Free | 5 min |
+| **Disk space** — 15 GB+ free | Any Android build | Free | — |
+| **Android phone + USB cable**, USB debugging on | Testing the detector | Free | 5 min |
+
+Supabase: create a project at supabase.com → SQL Editor → paste
+[supabase/schema.sql](supabase/schema.sql) → Run. Then Settings → API, copy the
+**Project URL** and the **anon public** key. The anon key is safe in the app;
+the `service_role` key is not — never put that in the client.
+
+### Needed before release (phase 11)
+
+| What | Unlocks | Cost | Notes |
+|---|---|---|---|
+| **Google Play developer account** | Publishing, IAP products | **$25 one-time** | The only mandatory spend |
+| **Upload keystore** | Signed release build | Free | Generated locally with `keytool` |
+| **Firebase project** → `google-services.json` | Analytics, Crashlytics, Remote Config | Free | Remote Config is how detection thresholds get tuned without a release |
+| **AdMob account** → app ID + ad unit IDs | Ads | Free | Payout setup needs bank/tax details |
+| **Cloudflare account** | Guest web join page | Free | Phase 10 |
+| **12 testers** | Production access | Free | **14 calendar days** — start this early |
+
+### Not needed yet
+
+| What | Cost | When |
+|---|---|---|
+| Apple Developer | $99/yr | Only when shipping iOS |
+| Custom domain for the guest link | ~₹800/yr | Optional polish; `*.pages.dev` is free |
+| Creator seeding | ₹50k–2.5L | Only after v1 works |
+| Paid installs | ₹50k–1L | Only if guest→install clears 15% |
 
 ---
 
 ## Phases
 
-| # | Phase | Time | Deliverable / checkpoint | Priority |
-|---|---|---|---|---|
-| **0** | **Project setup** | 30 m | `flutter create`, deps in pubspec, feature folders, git init, app runs on a real phone | MUST |
-| **1** | **Pick-up detector** | 2 h | A debug screen showing live accel/gyro values + a state machine: `settling → armed → CAUGHT`. Put the phone down, pick it up, it fires. **This is the product — do not rush it.** | MUST |
-| **2** | **Single-player game loop** | 1.5 h | Lobby → set stake → "put phones down" → 5-sec arm countdown → running timer → caught → result screen. Fully local, no network. **Playable game exists at the end of this phase.** | MUST |
-| **3** | **Siren, haptics, wakelock** | 1 h | Loud siren + vibration on catch, screen stays awake, big readable timer. The sound *is* the shame mechanic. | MUST |
-| **4** | **Local storage** | 45 m | Drift (SQLite): game history, per-player tally, "cracked first 7× this month" | MUST |
-| **5** | **Supabase rooms + realtime** | 2.5 h | Schema (rooms, players, events), create room with 4-letter code, join by code, presence, catch broadcast to all phones, live leaderboard | MUST |
-| **6** | **QR join** | 45 m | Host shows QR (`qr_flutter`), guest scans (`mobile_scanner`) → joins room. **Test with 3 phones at a real table.** | MUST |
-| **7** | **Result card + share** | 1 h | Screenshot-to-image result card → `share_plus` → WhatsApp. This is your growth loop. | HIGH |
-| **8** | **Table Talk cards** | 45 m | JSON card packs, prompt rotates on screen while the timer runs | HIGH |
-| **9** | **Streak mode** | 1 h | Daily phone-free dinner streak + local notification reminder. Only real D30 lever. | MEDIUM |
-| **10** | **Guest web join page** | 2 h | Static page on Cloudflare Pages: DeviceMotion + Page Visibility, joins the same Supabase room, no install. Keep it under 50 KB for restaurant wifi. | MEDIUM — but it's the viral unlock |
-| **11** | **Money + analytics + release** | 2 h | AdMob test ads, `in_app_purchase` Pro unlock, Firebase Analytics + Crashlytics, app icon, splash, package name, keystore, signed AAB | MUST before launch |
+| # | Phase | Time | Deliverable |
+|---|---|---|---|
+| 5 | Supabase rooms + realtime | 2.5 h | 4-letter room code, join, presence, catch broadcast, live leaderboard |
+| 6 | QR join | 45 m | Host shows QR, guest scans. Test with 3 phones at a real table |
+| 7 | Result card + share | 1 h | Screenshot-to-image card → WhatsApp. The growth loop |
+| 8 | Table Talk cards | 45 m | JSON prompt packs rotating on screen during the round |
+| 9 | Streak mode | 1 h | Daily phone-free dinner streak + reminder. Only real D30 lever |
+| 10 | Guest web join page | 2 h | Cloudflare Pages, DeviceMotion + Page Visibility, under 50 KB |
+| 11 | Money, analytics, release | 2 h | AdMob, Pro unlock, Firebase, icon, keystore, signed AAB |
 
-**Totals:** Phases 0–6 = **9 h** · Phases 7–11 = **7 h 45 m** · Full build ≈ **17 h**
+**~10 hours of work left.**
 
 ---
 
-## What to cut if you run out of time tonight
+## Suggested order from here
 
-| Cut this | Not this |
-|---|---|
-| Streak mode (9) | Pick-up detector (1) |
-| Guest web page (10) | Siren (3) |
-| Table Talk cards (8) | Supabase rooms (5) |
-| Ads and Pro unlock (11) | QR join (6) |
-| Pretty UI | Working catch detection |
+1. **Phases 7, 8, 9 now** (~2h 45m) — no accounts needed, and they make the solo
+   game genuinely good rather than a tech demo.
+2. **Free up disk, plug in a phone** → verify the detector in the real world.
+   Nothing else matters if detection feels wrong.
+3. **Supabase keys** → phases 5 and 6 → test with 3 phones at a real table.
+4. **Phase 10** → the guest web page, which is the viral unlock.
+5. **Phase 11** → release build, then start the 12-tester clock immediately.
 
----
-
-## After the build — not tonight, but start the clock
+## After the build
 
 | Step | When | Note |
 |---|---|---|
-| Google Play account, $25 | Day 2 | Nothing ships without it |
-| 12 testers, closed test | Day 2–16 | **14 calendar days minimum.** Line the people up now |
-| Threshold tuning on cheap Androids | Days 3–16 | Use the closed test to collect false-positive reports |
-| Production release | Day ~17 | After Google review |
-| 20 creator videos (India) | Week 4 | Only after the app is stable |
+| Play account, $25 | Before closed test | |
+| 12 testers, closed test | 14 calendar days | Line people up now |
+| Threshold tuning | Throughout | Use the closed test to collect false-positive reports |
+| Production release | After Google review | |
+| 20 creator videos (India) | Week 4 | Only once stable |
 | Watch guest→install | Week 5 | >15% = fund US/UK installs. <15% = stop |
-
----
-
-## Phase 1 detail — because everything depends on it
-
-| Sub-step | What |
-|---|---|
-| 1a | Stream `accelerometerEvents` + `gyroscopeEvents` via `sensors_plus` |
-| 1b | Compute gravity-magnitude deviation and rotation rate; low-pass filter both |
-| 1c | **Settling state:** phone must be flat and still for 2 s before the game arms |
-| 1d | **Armed state:** watch for deviation above threshold sustained ~150 ms (so a table bump doesn't fire) |
-| 1e | Also catch: `AppLifecycleState.paused/inactive` (switched away) and screen unlock |
-| 1f | Debug overlay printing live values + what tripped the catch — keep this in the app behind a dev flag forever |
-| 1g | Thresholds in one constants file now, Firebase Remote Config later |
