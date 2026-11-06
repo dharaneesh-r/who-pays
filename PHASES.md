@@ -21,10 +21,11 @@ Status as of 2026-11-06. Context: [CONTEXT.md](CONTEXT.md)
 | 10 | Guest web join page | ✅ (written, not deployed) |
 | 11 | IAP, ads, icon, release signing | ✅ (test ad ids, no keystore yet) |
 
-**Verified:** 83 unit tests passing · `flutter analyze` clean · **debug APK builds** · **release APKs build** (arm64 27.6 MB, arm 23.8 MB, x86_64 29.9 MB) · 49 Dart files.
-49 Dart files · 12 commits.
+**Verified:** 83 unit tests passing · `flutter analyze` clean · `flutter doctor`
+fully green · debug APK, release APKs (arm64 27.6 MB, arm 23.8 MB, x86_64
+29.9 MB) and the release `.aab` (56.1 MB) all build with exit 0 · 49 Dart files.
 
-**Not verified:** nothing has run on a physical device. No round, siren, room or purchase has ever executed. The `.aab` builds but Flutter cannot strip native debug symbols without the NDK, so it exits non-zero — install the NDK before the real release.
+**Not verified:** nothing has run on a physical device. No round, siren, room or
 purchase has ever executed.
 
 ---
@@ -49,7 +50,7 @@ purchase has ever executed.
 |---|---|
 | `IconTreeShakerException: Could not find const_finder.dart.snapshot` | This Flutter install's cache is incomplete and `flutter precache --android` does not restore it. Build with `--no-tree-shake-icons`, or reinstall the Flutter SDK to a path without spaces to get a complete cache. Only cost is a slightly larger icon font. |
 | `Cannot lock execution history cache … already locked` | A killed build left a Gradle daemon holding the lock. `cd android && ./gradlew --stop` |
-| `NDK … did not have a source.properties file` | An empty stub left by a failed NDK download. Delete `%LOCALAPPDATA%\Android\sdk\ndk`. Nothing in this project compiles native code |
+| `NDK … did not have a source.properties file` | Was an empty stub from a failed download. **Resolved:** command-line tools installed and NDK 27.0.12077973 installed via `sdkmanager`; `ndkVersion` is now pinned in `android/app/build.gradle.kts`. The NDK is needed only so release builds can strip debug symbols |
 | Build runs the disk to 0 bytes | Gradle caches grow past 4 GB. Keep 15 GB free; `flutter clean` reclaims ~1 GB |
 
 ### Replacing the test AdMob ids
