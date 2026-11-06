@@ -86,13 +86,14 @@ class DetectorService {
   }
 }
 
-final detectorServiceProvider = Provider.autoDispose<DetectorService>((ref) {
+/// App-lifetime singleton: it owns the sensor subscriptions and the lifecycle
+/// listener, so it must not be torn down and rebuilt as screens come and go.
+final detectorServiceProvider = Provider<DetectorService>((ref) {
   final service = DetectorService();
   ref.onDispose(service.dispose);
   return service;
 });
 
-final detectorSnapshotProvider =
-    StreamProvider.autoDispose<DetectorSnapshot>((ref) {
+final detectorSnapshotProvider = StreamProvider<DetectorSnapshot>((ref) {
   return ref.watch(detectorServiceProvider).snapshots;
 });

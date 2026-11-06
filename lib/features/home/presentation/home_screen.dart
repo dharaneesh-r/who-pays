@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../detector/presentation/detector_debug_screen.dart';
+import '../../game/presentation/game_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -29,7 +30,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const Spacer(),
               FilledButton(
-                onPressed: null, // Phase 2
+                onPressed: () => context.push(GameScreen.path),
                 child: const Text('START A GAME'),
               ),
               const SizedBox(height: 12),
