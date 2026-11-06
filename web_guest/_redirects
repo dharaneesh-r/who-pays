@@ -1,0 +1,3 @@
+# The QR points at /j/ABCD. Cloudflare Pages serves the single page for any
+# such path and the code is read from the URL in app.js.
+/j/*    /index.html    200
