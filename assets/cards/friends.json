@@ -1,0 +1,27 @@
+{
+  "id": "friends",
+  "name": "Friends",
+  "free": true,
+  "prompts": [
+    "What's something you believed until embarrassingly recently?",
+    "Who at this table would survive longest without their phone? Vote.",
+    "What's the worst haircut anyone here has had?",
+    "What did you want to be at age ten, and what happened?",
+    "Which one of us would get away with a crime?",
+    "What's the pettiest thing you've ever held a grudge about?",
+    "What's the best money you've spent this year? The worst?",
+    "Who here has the worst taste in music? Defend yourself.",
+    "What's a compliment you've never forgotten?",
+    "What would you do with a completely free year?",
+    "What's the most useless skill you're weirdly good at?",
+    "Which of us is most likely to go viral, and for what?",
+    "What's something you've never told the people at this table?",
+    "What was the last thing that genuinely made you laugh out loud?",
+    "If this table had to start a business tomorrow, what would it be?",
+    "What's your most irrational fear?",
+    "Who's the funniest person here? No, really — pick one.",
+    "What's something you've changed your mind about completely?",
+    "What's the worst advice you've ever been given?",
+    "What's a small thing that instantly ruins your day?"
+  ]
+}

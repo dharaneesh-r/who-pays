@@ -9,6 +9,7 @@ import '../../game/presentation/game_screen.dart';
 import '../../room/presentation/host_setup_screen.dart';
 import '../../room/presentation/join_room_screen.dart';
 import '../../stats/presentation/stats_screen.dart';
+import '../../stats/presentation/streak_badge.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -35,6 +36,8 @@ class HomeScreen extends ConsumerWidget {
                 style: text.bodyMedium?.copyWith(color: Colors.white60),
               ),
               const Spacer(),
+              const StreakBadge(),
+              const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => context.push(HostSetupScreen.path),
                 child: const Text('HOST A TABLE'),

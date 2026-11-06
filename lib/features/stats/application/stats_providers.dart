@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/local/prefs_service.dart';
 import '../../../data/local/round_dao.dart';
 import '../../game/domain/game_models.dart';
+import '../domain/streak.dart';
 import '../domain/tally.dart';
 
 /// How far back the leaderboard looks. Recent behaviour is what the group
@@ -71,6 +72,12 @@ final talliesProvider = FutureProvider<List<PlayerTally>>((ref) async {
 final recentRoundsProvider = FutureProvider<List<StoredRound>>((ref) async {
   ref.watch(statsRevisionProvider);
   return ref.watch(roundDaoProvider).recentRounds();
+});
+
+final streakProvider = FutureProvider<Streak>((ref) async {
+  ref.watch(statsRevisionProvider);
+  final days = await ref.watch(roundDaoProvider).playedDays();
+  return computeStreak(days, now: DateTime.now());
 });
 
 final personalBestProvider = FutureProvider<Duration>((ref) async {

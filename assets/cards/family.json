@@ -1,0 +1,22 @@
+{
+  "id": "family",
+  "name": "Family",
+  "free": true,
+  "prompts": [
+    "What's the story behind your name?",
+    "What was the house you grew up in like?",
+    "What's something your parents did that you swore you'd never do — and now do?",
+    "What's the best meal anyone at this table has ever cooked?",
+    "Who in the family tells the best stories?",
+    "What's a family tradition you want to keep going?",
+    "What were you like as a kid? Ask someone who was there.",
+    "What's the furthest anyone in this family has travelled?",
+    "What did our grandparents do for a living?",
+    "What's the biggest change you've seen in your lifetime?",
+    "What's a photo of us you'll never delete?",
+    "What's something you learned from someone at this table?",
+    "What was your first job, and how much did it pay?",
+    "Which relative do you most take after?",
+    "What's a question you wish someone had asked you earlier?"
+  ]
+}

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/local/prefs_service.dart';
 import '../application/room_session.dart';
 import 'room_lobby_screen.dart';
+import 'scan_qr_screen.dart';
 
 class JoinRoomScreen extends ConsumerStatefulWidget {
   const JoinRoomScreen({super.key});
@@ -26,6 +27,17 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
     _code.dispose();
     _name.dispose();
     super.dispose();
+  }
+
+  /// Scanning fills the code in rather than joining straight away, so the
+  /// player can still fix their name before committing.
+  Future<void> _scan() async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const ScanQrScreen()),
+    );
+    if (code == null || !mounted) return;
+    _code.text = code;
+    await _submit();
   }
 
   Future<void> _submit() async {
@@ -101,6 +113,12 @@ class _JoinRoomScreenState extends ConsumerState<JoinRoomScreen> {
                 ),
               ],
               const Spacer(),
+              OutlinedButton.icon(
+                onPressed: session.joining ? null : _scan,
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('SCAN THE QR'),
+              ),
+              const SizedBox(height: 12),
               FilledButton(
                 onPressed: session.joining ? null : _submit,
                 child: Text(session.joining ? 'JOINING…' : 'JOIN'),

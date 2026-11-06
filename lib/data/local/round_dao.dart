@@ -129,6 +129,21 @@ class RoundDao {
         .toList();
   }
 
+  /// Every day on which a round was played, newest first. Feeds the streak.
+  Future<List<DateTime>> playedDays({int limit = 400}) async {
+    final db = await _database.instance;
+    final rows = await db.query(
+      'rounds',
+      columns: ['played_at'],
+      orderBy: 'played_at DESC',
+      limit: limit,
+    );
+    return rows
+        .map((row) =>
+            DateTime.fromMillisecondsSinceEpoch(row['played_at'] as int))
+        .toList();
+  }
+
   /// Longest this player has ever lasted.
   Future<Duration> personalBest(String name) async {
     final db = await _database.instance;

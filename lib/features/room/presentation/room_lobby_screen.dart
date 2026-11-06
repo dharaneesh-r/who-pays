@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../domain/join_link.dart';
 import '../../game/presentation/game_screen.dart';
 import '../application/room_session.dart';
 import '../domain/room_models.dart';
@@ -60,7 +62,28 @@ class RoomLobbyScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
                     _CodeCard(code: snapshot.room.code),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: QrImageView(
+                          data: JoinLink.forCode(snapshot.room.code),
+                          size: 132,
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '…or scan this',
+                      textAlign: TextAlign.center,
+                      style: text.bodyMedium?.copyWith(color: Colors.white38),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       'At the table (${snapshot.players.length})',
                       style: text.titleMedium,

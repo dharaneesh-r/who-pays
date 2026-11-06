@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../cards/presentation/table_talk.dart';
 import '../../room/application/room_session.dart';
 import '../../room/presentation/live_standings.dart';
 import '../application/game_controller.dart';
@@ -87,6 +88,10 @@ class PlayView extends ConsumerWidget {
               ],
             ),
           const Spacer(),
+          if (!settling) ...[
+            const TableTalk(),
+            const SizedBox(height: 16),
+          ],
           if (inRoom) ...[
             const LiveStandings(),
             const SizedBox(height: 20),
