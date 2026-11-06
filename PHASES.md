@@ -43,6 +43,15 @@ purchase has ever executed.
 | 8 | **Firebase project** → `google-services.json` | Analytics, Crashlytics, and Remote Config for tuning detection thresholds without a release. **Not yet wired** | Free |
 | 9 | **12 testers, 14 days** | Required for production access on a new personal account | Free |
 
+### Known build quirks on this machine
+
+| Problem | Fix |
+|---|---|
+| `IconTreeShakerException: Could not find const_finder.dart.snapshot` | This Flutter install's cache is incomplete and `flutter precache --android` does not restore it. Build with `--no-tree-shake-icons`, or reinstall the Flutter SDK to a path without spaces to get a complete cache. Only cost is a slightly larger icon font. |
+| `Cannot lock execution history cache … already locked` | A killed build left a Gradle daemon holding the lock. `cd android && ./gradlew --stop` |
+| `NDK … did not have a source.properties file` | An empty stub left by a failed NDK download. Delete `%LOCALAPPDATA%\Android\sdk\ndk`. Nothing in this project compiles native code |
+| Build runs the disk to 0 bytes | Gradle caches grow past 4 GB. Keep 15 GB free; `flutter clean` reclaims ~1 GB |
+
 ### Replacing the test AdMob ids
 
 1. `android/app/src/main/AndroidManifest.xml` — the
