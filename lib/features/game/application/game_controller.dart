@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/feedback/alarm_service.dart';
 import '../../detector/application/detector_service.dart';
 import '../../detector/domain/detector_models.dart';
+import '../../stats/application/stats_providers.dart';
 import '../domain/game_models.dart';
 
 /// Drives one round: setup → settling → running → finished.
@@ -161,6 +162,19 @@ class GameController extends Notifier<GameState> {
       elapsed: result.lasted,
       result: result,
     );
+
+    _record(result);
+  }
+
+  /// Persist the round. Storage failures must never affect the game that was
+  /// just played, so this is fire-and-forget and swallows errors.
+  void _record(RoundResult result) {
+    ref
+        .read(roundRecorderProvider)
+        .record(config: state.config, result: result)
+        .then((_) {
+      ref.read(statsRevisionProvider.notifier).bump();
+    }).catchError((_) {});
   }
 
   void _teardown() {

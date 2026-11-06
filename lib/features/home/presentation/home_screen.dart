@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../detector/presentation/detector_debug_screen.dart';
 import '../../game/presentation/game_screen.dart';
+import '../../stats/presentation/stats_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -38,7 +39,12 @@ class HomeScreen extends StatelessWidget {
                 onPressed: null, // Phase 5
                 child: const Text('JOIN WITH CODE'),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => context.push(StatsScreen.path),
+                child: const Text('My record'),
+              ),
+              const SizedBox(height: 12),
               if (kDebugMode)
                 TextButton(
                   onPressed: () => context.push(DetectorDebugScreen.path),
