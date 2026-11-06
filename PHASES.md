@@ -4,7 +4,7 @@ Status as of 2026-11-06. Context: [CONTEXT.md](CONTEXT.md)
 
 ## Progress
 
-**5 of 12 phases done. 7 pending.**
+**10 of 12 phases done. 2 pending.**
 
 | # | Phase | Status | Blocked by |
 |---|---|---|---|
@@ -13,16 +13,16 @@ Status as of 2026-11-06. Context: [CONTEXT.md](CONTEXT.md)
 | 2 | Round loop (setup/play/result) | ✅ Done | — |
 | 3 | Siren, haptics, wakelock | ✅ Done | — |
 | 4 | Storage, history, tallies | ✅ Done | — |
-| 5 | Supabase rooms + realtime | ⛔ Blocked | **Supabase URL + anon key** |
-| 6 | QR join | ⛔ Blocked | Phase 5 |
-| 7 | Result card + share | 🟢 Ready now | Nothing |
-| 8 | Table Talk cards | 🟢 Ready now | Nothing |
-| 9 | Streak mode | 🟢 Ready now | Nothing |
+| 5 | Supabase rooms + realtime | ✅ Done | — |
+| 6 | QR join | ✅ Done | — |
+| 7 | Result card + share | ✅ Done | — |
+| 8 | Table Talk cards | ✅ Done | — |
+| 9 | Streak mode | ✅ Done | — |
 | 10 | Guest web join page | ⛔ Blocked | Phase 5 + **Cloudflare account** |
 | 11 | Money, analytics, release build | ⛔ Blocked | **AdMob + Firebase + Play account + keystore** |
 | — | Verify APK on a real device | ⛔ Blocked | **Disk space + an Android phone** |
 
-Verified so far: 32 unit tests passing, `flutter analyze` clean, 5 commits.
+Verified so far: 70 unit tests passing, `flutter analyze` clean, 9 commits, 42 Dart files.
 Not verified: nothing has run on a real phone yet.
 
 ---
