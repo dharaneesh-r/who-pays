@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'dart:async';
+
 import 'app.dart';
 import 'data/remote/supabase_init.dart';
+import 'features/paywall/application/ads_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,5 +20,14 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
   ]);
 
-  runApp(const ProviderScope(child: WhoPaysApp()));
+  final container = ProviderContainer();
+  // Warm the ad up front so the first result screen is not the one that waits.
+  unawaited(container.read(adsServiceProvider).init());
+
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const WhoPaysApp(),
+    ),
+  );
 }

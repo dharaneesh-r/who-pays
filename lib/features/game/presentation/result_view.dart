@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/feedback/alarm_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../paywall/application/ads_service.dart';
 import '../../room/application/room_session.dart';
 import '../../room/presentation/live_standings.dart';
 import '../../share/application/share_service.dart';
@@ -118,15 +119,22 @@ class ResultView extends ConsumerWidget {
             label: const Text('SHARE THE DAMAGE'),
           ),
           const SizedBox(height: 12),
+          // The ad runs when leaving the result, never on arrival: an
+          // interstitial landing on top of the siren would be unbearable, and
+          // an ad during a round would cover the clock the table is watching.
           FilledButton(
-            onPressed: controller.start,
+            onPressed: () async {
+              await ref.read(adsServiceProvider).maybeShowOnResult();
+              controller.start();
+            },
             child: const Text('PLAY AGAIN'),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () {
+            onPressed: () async {
               controller.reset();
-              if (context.canPop()) context.pop();
+              await ref.read(adsServiceProvider).maybeShowOnResult();
+              if (context.mounted && context.canPop()) context.pop();
             },
             child: const Text('DONE'),
           ),

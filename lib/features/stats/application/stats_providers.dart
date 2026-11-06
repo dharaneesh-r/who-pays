@@ -74,6 +74,11 @@ final recentRoundsProvider = FutureProvider<List<StoredRound>>((ref) async {
   return ref.watch(roundDaoProvider).recentRounds();
 });
 
+final roundsTodayProvider = FutureProvider<int>((ref) async {
+  ref.watch(statsRevisionProvider);
+  return ref.watch(roundDaoProvider).roundsToday();
+});
+
 final streakProvider = FutureProvider<Streak>((ref) async {
   ref.watch(statsRevisionProvider);
   final days = await ref.watch(roundDaoProvider).playedDays();

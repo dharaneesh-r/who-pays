@@ -129,6 +129,19 @@ class RoundDao {
         .toList();
   }
 
+  /// Rounds played since midnight — what the free tier is counted against.
+  Future<int> roundsToday() async {
+    final db = await _database.instance;
+    final now = DateTime.now();
+    final midnight = DateTime(now.year, now.month, now.day);
+
+    final rows = await db.rawQuery(
+      'SELECT COUNT(*) AS n FROM rounds WHERE played_at >= ?',
+      [midnight.millisecondsSinceEpoch],
+    );
+    return (rows.first['n'] as int?) ?? 0;
+  }
+
   /// Every day on which a round was played, newest first. Feeds the streak.
   Future<List<DateTime>> playedDays({int limit = 400}) async {
     final db = await _database.instance;

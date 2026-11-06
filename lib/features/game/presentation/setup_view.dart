@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../paywall/application/purchase_service.dart';
+import '../../paywall/presentation/paywall_sheet.dart';
+import '../../stats/application/stats_providers.dart';
 import '../application/game_controller.dart';
 import '../domain/game_models.dart';
 
@@ -86,9 +89,17 @@ class SetupView extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
           FilledButton(
-            onPressed: () => onStart == null
-                ? controller.start()
-                : onStart!(state.config),
+            onPressed: () {
+              // The free tier is counted in rounds per day. If the count has
+              // not loaded yet, let them play — never block a round on a
+              // database read.
+              final roundsToday = ref.read(roundsTodayProvider).value ?? 0;
+              if (!ref.read(entitlementsProvider).canPlay(roundsToday: roundsToday)) {
+                PaywallSheet.show(context);
+                return;
+              }
+              onStart == null ? controller.start() : onStart!(state.config);
+            },
             child: Text(actionLabel),
           ),
           const SizedBox(height: 16),
