@@ -7,8 +7,23 @@ abstract final class DetectionConfig {
   /// Accelerometer / gyroscope sample rate.
   static const Duration samplingInterval = Duration(milliseconds: 20); // 50 Hz
 
-  /// Low-pass filter weight for the gravity estimate (0–1, higher = smoother).
-  static const double gravitySmoothing = 0.85;
+  /// Low-pass filter weight for the gravity estimate while armed (0–1, higher
+  /// = smoother). At 50 Hz this is a time constant of ~0.65 s.
+  ///
+  /// Must be slow: a fast filter (0.85 → ~130 ms) absorbs a real pick-up into
+  /// the gravity estimate and the player is never caught.
+  static const double gravitySmoothing = 0.97;
+
+  /// Filter weight while settling, when the phone's resting orientation still
+  /// has to be learned. Faster (~0.19 s) so it converges well inside
+  /// [stillnessWindow] even if the phone was just set down on its side.
+  static const double gravitySmoothingSettling = 0.90;
+
+  /// While armed, the gravity estimate is only updated when the sample looks
+  /// like rest. Without this gate, repeated table bumps drag the estimate away
+  /// from true gravity until an untouched phone reads as moving — a false
+  /// positive that ends the game for an innocent player.
+  static const double gravityUpdateGate = 0.5;
 
   /// While settling: how still the phone must be to count as "placed down",
   /// in m/s² of deviation from gravity.
