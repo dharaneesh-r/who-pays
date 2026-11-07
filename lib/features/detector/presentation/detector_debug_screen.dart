@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,16 +14,50 @@ import 'trace_screen.dart';
 /// Live sensor read-out and detector state. Kept in the app behind a debug flag
 /// permanently: when a group reports a false positive, this screen is the only
 /// way to find out which threshold was wrong on their phone.
-class DetectorDebugScreen extends ConsumerWidget {
+class DetectorDebugScreen extends ConsumerStatefulWidget {
   const DetectorDebugScreen({super.key});
 
   static const path = '/dev/detector';
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DetectorDebugScreen> createState() =>
+      _DetectorDebugScreenState();
+}
+
+class _DetectorDebugScreenState extends ConsumerState<DetectorDebugScreen> {
+  // The highest readings seen since the last reset.
+  //
+  // Live numbers are useless for setting a threshold: the peak of a table
+  // thump lasts a few milliseconds and is gone before anyone can read it off
+  // the screen. Holding the maximum turns "watch the numbers" into two
+  // numbers somebody can actually write down — the worst a knock produces,
+  // and the least a real pick-up produces. The threshold has to sit between
+  // them.
+  double _peakAccel = 0;
+  double _peakGyro = 0;
+
+  void _reset() => setState(() {
+        _peakAccel = 0;
+        _peakGyro = 0;
+      });
+
+  @override
+  Widget build(BuildContext context) {
     final service = ref.watch(detectorServiceProvider);
     final snapshot =
         ref.watch(detectorSnapshotProvider).value ?? const DetectorSnapshot.idle();
+
+    if (snapshot.linearAcceleration > _peakAccel ||
+        snapshot.rotationRate > _peakGyro) {
+      // Painting is not the place to change state, so defer it a frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _peakAccel = math.max(_peakAccel, snapshot.linearAcceleration);
+          _peakGyro = math.max(_peakGyro, snapshot.rotationRate);
+        });
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sensor detector')),
@@ -46,7 +82,9 @@ class DetectorDebugScreen extends ConsumerWidget {
                 unit: 'rad/s',
                 threshold: DetectionConfig.pickUpGyroThreshold,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
+              _PeakCard(accel: _peakAccel, gyro: _peakGyro),
+              const SizedBox(height: 18),
               _Hold(
                 label: 'Stillness hold (to arm)',
                 progress: snapshot.stillHoldProgress,
@@ -80,6 +118,11 @@ class DetectorDebugScreen extends ConsumerWidget {
               OutlinedButton(
                 onPressed: service.stop,
                 child: const Text('STOP'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton(
+                onPressed: _reset,
+                child: const Text('RESET PEAKS'),
               ),
               const SizedBox(height: 10),
               // Capturing labelled sensor data beats reading these numbers off
@@ -197,6 +240,73 @@ class _Hold extends StatelessWidget {
             valueColor: AlwaysStoppedAnimation(color),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// The two numbers that decide every threshold, held so they can be read.
+class _PeakCard extends StatelessWidget {
+  const _PeakCard({required this.accel, required this.gyro});
+
+  final double accel;
+  final double gyro;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 18),
+      decoration: BoxDecoration(
+        color: AppTheme.accent.withValues(alpha: 0.10),
+        border: Border.all(color: AppTheme.accent, width: 2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'PEAK SINCE RESET',
+            style: TextStyle(
+              color: AppTheme.accent,
+              fontSize: 12,
+              letterSpacing: 2,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _Peak(label: 'accel', value: accel, unit: 'm/s²'),
+              _Peak(label: 'rotation', value: gyro, unit: 'rad/s'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Peak extends StatelessWidget {
+  const _Peak({required this.label, required this.value, required this.unit});
+
+  final String label;
+  final double value;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value.toStringAsFixed(2),
+          style: const TextStyle(
+            fontSize: 34,
+            fontWeight: FontWeight.w800,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
+        Text('$label ($unit)',
+            style: const TextStyle(color: Colors.white38, fontSize: 12)),
       ],
     );
   }
