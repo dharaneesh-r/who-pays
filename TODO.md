@@ -1,6 +1,6 @@
 # What's left — Who Pays?
 
-Last verified against the live systems: **7 Nov 2026**.
+Last verified against the live systems: **7 Nov 2026, evening**.
 
 The app is built and works. Everything below needs an account, a device or a
 decision that is yours — none of it is waiting on more code.
@@ -141,29 +141,42 @@ Done when: a real ad shows after a round on a production build.
 
 ---
 
-## 5. Validate the detector — 1 minute on the phone
+## 5. Calibrate the detector — 5 minutes on the phone
 
-The thresholds that decide who pays have never been checked against a real
-table. Too sensitive and a thump blames someone who never touched their phone;
-too blunt and a cheat gets away with it. This cannot be settled from a
-simulation — a thin café table transmits a knock nothing like a heavy one.
+**This is the only part of the app that has never been proven to work.**
 
-On the phone: **Settings → Sensor test → RECORD A TRACE → START RECORDING**.
+Every test so far ended with the "I give up" button. A phone has never
+actually been picked up off a table and caught. The number that decides who
+pays — `pickUpAccelThreshold`, currently `1.6` — is still a guess, and it
+cannot be settled from a simulation: a thin cafe table transmits a thump
+nothing like a heavy one.
 
-It takes 63 seconds and tells you what to do at each step. Do it on the kind of
-table you would really play on.
+It needs exactly two readings. On the phone:
 
-Then tell me, and I will pull it and fit the numbers to it:
+**Settings -> Sensor test -> PUT PHONE DOWN & WATCH**
 
-```bash
-adb pull /sdcard/Android/data/in.nearle.who_pays/files/ traces/
-dart run tools/analyse_trace.dart traces/trace_<timestamp>.csv
-```
+The **PEAK SINCE RESET** card holds the highest value seen, because a thump
+peaks for a few milliseconds and is gone long before anyone could read a live
+number off the screen.
 
-Background in [DETECTOR_TUNING.md](DETECTOR_TUNING.md).
+| | Do this | Why |
+|---|---|---|
+| 1 | Phone face up on the table, hands off. **Thump the table hard, 5 times.** Note both numbers. | The threshold must sit **above** this, or a knock blames someone innocent |
+| 2 | Tap **RESET PEAKS**. Pick the phone up **as gently as you possibly can**. Note both numbers. | The threshold must sit **below** this, or a real pick-up goes uncaught |
 
-Done when: the analyser reports no false positives on thumps and no misses on
-the gentlest lift.
+Send me the four numbers and I will set the thresholds from them.
+
+If the two overlap, acceleration alone cannot separate them on that table, and
+the detector has to lean on the sustained-motion window instead — a thump is a
+spike lasting tens of milliseconds, a pick-up keeps moving for hundreds, and
+that difference always holds.
+
+> An earlier approach recorded a guided 63-second trace. It is still in the
+> app under **RECORD A TRACE**, but the peak readout above is the faster path
+> and needs no file transfer. Background in [DETECTOR_TUNING.md](DETECTOR_TUNING.md).
+
+Done when: the thump peak is comfortably below the threshold and the gentlest
+lift is comfortably above it.
 
 ---
 
@@ -194,7 +207,39 @@ blocks the Android launch.
 
 ---
 
+## Deliberately not doing
+
+Worth writing down, so these stop coming back as open questions.
+
+**Firebase / `google-services.json` — dropped.** It only powers Remote Config,
+which nothing uses. It would add a config file, a dependency and a Data Safety
+disclosure for no benefit. Revisit only if you want to change detector
+thresholds without shipping an update.
+
+**Bill scanning and splitting — not now, and scanning probably never.**
+Splitting the bill equally contradicts the premise the whole app rests on:
+the loser pays. Scanning also costs a camera permission, receipt photos
+containing names and card digits, OCR that fails on crumpled thermal paper,
+and a fight with Splitwise over a ledger this app does not keep.
+
+If anything, build the cheap version after launch: a manual total, a head
+count, and the per-head figure shown next to "or the loser pays the lot".
+One screen, no permissions, keeps the joke. Build it only if testers ask
+unprompted.
+
+**Any other new feature before launch.** Features for users you do not have
+yet are the surest way never to get any.
+
+---
+
 ## Shortest path
 
-Today: step 1 (2 min) → step 2 (15 min) → step 6 up to the closed test.
-While the 14-day clock runs: steps 3, 4 and 5.
+**Today:** step 1 (2 min) -> step 2 (15 min) -> step 6 as far as the closed
+test. Steps 1 and 2 are the only true gates, and step 6 starts a 14-day clock
+you cannot shorten, so getting to it is worth more than anything else today.
+
+**Then, while the clock runs:** steps 5, 3 and 4, in that order. Step 5 first
+because a detector that blames the wrong person is the one failure testers
+will actually notice.
+
+Nothing on this list is waiting on more code.
