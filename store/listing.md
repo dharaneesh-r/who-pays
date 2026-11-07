@@ -22,7 +22,7 @@ The name carries two keywords people actually search — "phone down" and
 
 ---
 
-## Short description (80 max) — **79**
+## Short description (80 max) — **73**
 
 ```
 Phones face down on the table. First one to pick theirs up pays the bill.
