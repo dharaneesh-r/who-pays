@@ -8,6 +8,7 @@ class PrefsService {
   static const _sirenKey = 'siren_enabled';
   static const _lastRoomKey = 'last_room_code';
   static const _remindersKey = 'reminders_enabled';
+  static const _duelKey = 'duel_code';
 
   static const defaultPlayerName = 'You';
 
@@ -31,6 +32,22 @@ class PrefsService {
       await prefs.remove(_playerNameKey);
     } else {
       await prefs.setString(_playerNameKey, clean);
+    }
+  }
+
+  /// The standing Focus Duel this phone belongs to. Long-lived, unlike a
+  /// room code, because a duel is a group of flatmates rather than one dinner.
+  Future<String?> duelCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_duelKey);
+  }
+
+  Future<void> setDuelCode(String? code) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (code == null) {
+      await prefs.remove(_duelKey);
+    } else {
+      await prefs.setString(_duelKey, code);
     }
   }
 

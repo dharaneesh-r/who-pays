@@ -6,6 +6,7 @@ import '../../../core/feedback/alarm_service.dart';
 import '../../../data/remote/analytics_service.dart';
 import '../../detector/application/detector_service.dart';
 import '../../detector/domain/detector_models.dart';
+import '../../duel/application/duel_session.dart';
 import '../../stats/application/reminder_service.dart';
 import '../../stats/application/stats_providers.dart';
 import '../domain/game_models.dart';
@@ -179,6 +180,12 @@ class GameController extends Notifier<GameState> {
           lastedMs: result.lasted.inMilliseconds,
           inRoom: _inRoom,
         );
+
+    // Any solo round counts toward the duel — being in one should not mean
+    // picking a different mode, just that your rounds mean something.
+    if (!_inRoom) {
+      unawaited(ref.read(duelSessionProvider.notifier).submitRound(result.lasted));
+    }
 
     _record(result);
   }

@@ -25,7 +25,7 @@ Audited against the source on 2026-11-07, not from memory.
 | 7 | ~~Solo rounds always saved as "You"~~ **FIXED** | Name is now set in Settings and used for solo rounds. Home shows "Set your name" in amber until one is saved |
 | 8 | ~~No pack picker~~ **FIXED** | Built in the setup screen as "Talk about…", with padlocks on paid packs |
 | 9 | ~~Streak has no reminder~~ **FIXED** | A 7:30pm notification, only while a streak is alive and today is unplayed. Toggle in Settings, inexact alarms so no special permission is needed |
-| 10 | **Focus Duel mode not built** | Listed in [CONTEXT.md](CONTEXT.md) as the async mode that gives weekday usage |
+| 10 | ~~Focus Duel mode not built~~ **BUILT** | Async daily challenge: play whenever, longest round that day wins. Needs `supabase/migration_duels.sql` |
 | 11 | ~~Errors invisible in the lobby~~ **FIXED** | A dismissible banner now shows room errors in the lobby and during a round |
 | 12 | ~~Players who quit are never cleaned up~~ **FIXED** | Phones heartbeat `last_seen` every 15s; anyone quiet for 45s drops out of the standings and no longer blocks the round. Needs `supabase/migration_presence.sql` |
 | 13 | ~~No way to rejoin after the app is killed~~ **FIXED** | Home shows a green REJOIN button when the saved table still exists |

@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/detector/presentation/detector_debug_screen.dart';
+import '../../features/duel/presentation/duel_screen.dart';
 import '../../features/game/presentation/game_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/room/presentation/host_setup_screen.dart';
@@ -31,6 +32,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: RoomLobbyScreen.path,
       builder: (_, _) => const RoomLobbyScreen(),
+    ),
+    GoRoute(
+      path: DuelScreen.path,
+      builder: (_, _) => const DuelScreen(),
     ),
     GoRoute(
       path: StatsScreen.path,

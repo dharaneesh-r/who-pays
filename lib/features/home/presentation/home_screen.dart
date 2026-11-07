@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/local/prefs_service.dart';
 import '../../../data/remote/supabase_init.dart';
+import '../../duel/application/duel_session.dart';
+import '../../duel/presentation/duel_screen.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../detector/presentation/detector_debug_screen.dart';
 import '../../game/presentation/game_screen.dart';
@@ -27,6 +29,7 @@ class HomeScreen extends ConsumerWidget {
     final online = ref.watch(supabaseReadyProvider);
     final hasName = ref.watch(hasPlayerNameProvider).value ?? true;
     final rejoin = ref.watch(rejoinableRoomProvider).value;
+    final inDuel = ref.watch(duelSessionProvider).inDuel;
 
     return Scaffold(
       body: SafeArea(
@@ -85,6 +88,11 @@ class HomeScreen extends ConsumerWidget {
               OutlinedButton(
                 onPressed: () => context.push(GameScreen.path),
                 child: const Text('JUST ME'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => context.push(DuelScreen.path),
+                child: Text(inDuel ? "TODAY'S DUEL" : 'FOCUS DUEL'),
               ),
               if (!online) ...[
                 const SizedBox(height: 10),
