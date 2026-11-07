@@ -1,0 +1,23 @@
+{
+  "id": "desi",
+  "name": "Desi",
+  "free": false,
+  "prompts": [
+    "Whose mother at this table makes the best food? Choose carefully.",
+    "What's the most dramatic thing a relative has said about your career?",
+    "Chai or coffee — and are you willing to lose a friendship over it?",
+    "What's the worst nickname a family member gave you?",
+    "Which relative asks about marriage first at every function?",
+    "What's the longest you've been stuck in traffic, and what did you do?",
+    "What's a school rule you still resent?",
+    "Who here would survive longest without their mother's cooking?",
+    "What's the most money you've spent on a wedding you barely wanted to attend?",
+    "What's your family's most ridiculous superstition?",
+    "Which film did everyone love that you secretly didn't?",
+    "What's the best street food you've ever eaten, and where?",
+    "Who at this table is most likely to be late? Vote now.",
+    "What's the most useless thing your family refuses to throw away?",
+    "Which relative would win in an argument with anyone here?",
+    "What did your parents sacrifice that you only understood later?"
+  ]
+}

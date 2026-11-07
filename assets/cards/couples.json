@@ -1,0 +1,25 @@
+{
+  "id": "couples",
+  "name": "Couples",
+  "free": false,
+  "prompts": [
+    "What did you think of me the first time we met? Be honest.",
+    "What's something small I do that you'd miss if I stopped?",
+    "Where were we the last time you remember laughing really hard together?",
+    "What's one thing you've wanted to ask me but never have?",
+    "If we had a completely free weekend, what would you actually want to do?",
+    "What's a habit of mine you've quietly got used to?",
+    "What's the best decision we've made together?",
+    "What did you imagine your life would look like at this age?",
+    "When do you feel most like yourself around me?",
+    "What's something you'd like us to do more of?",
+    "What's a conversation we keep avoiding?",
+    "What do you think I'd say is your best quality?",
+    "What's the kindest thing anyone has done for you?",
+    "What's something you've never told anyone at this table?",
+    "If we could go back to one day together, which one?",
+    "What are you looking forward to that you haven't mentioned?",
+    "What's one thing you need more of from me?",
+    "What's a tiny thing that makes your day better?"
+  ]
+}

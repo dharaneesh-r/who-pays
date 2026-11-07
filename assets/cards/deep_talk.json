@@ -1,0 +1,23 @@
+{
+  "id": "deep_talk",
+  "name": "Deep Talk",
+  "free": false,
+  "prompts": [
+    "What's something you've changed your mind about in the last few years?",
+    "What are you most afraid of that you rarely say out loud?",
+    "When did you last feel genuinely proud of yourself?",
+    "What would you tell yourself at nineteen?",
+    "What's a loss that changed how you think?",
+    "What do you want people to remember about you?",
+    "What are you putting off, and why?",
+    "What's the kindest thing a stranger has ever done for you?",
+    "What do you think you're wrong about right now?",
+    "Who do you owe an apology to?",
+    "What's something you've forgiven yourself for?",
+    "What does a good life look like to you — specifically?",
+    "What's the hardest thing you've ever had to say to someone?",
+    "What are you grateful for that you've stopped noticing?",
+    "What would you do differently if nobody was watching?",
+    "What's a belief you hold that most people here would disagree with?"
+  ]
+}

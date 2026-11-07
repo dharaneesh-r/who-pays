@@ -1,0 +1,22 @@
+{
+  "id": "team",
+  "name": "Team Lunch",
+  "free": false,
+  "prompts": [
+    "What's the best job you've ever had, and why?",
+    "What did you want to be before you ended up doing this?",
+    "What's a skill here that's completely wasted on your job description?",
+    "What's the worst interview you've ever sat through — either side of the table?",
+    "What's something you've learned from someone at this table?",
+    "What's a piece of work you're genuinely proud of?",
+    "What's the most useless meeting you've ever attended?",
+    "If you could delete one tool we use, which one?",
+    "What's something you believed about this industry that turned out to be wrong?",
+    "What's the best advice a manager ever gave you?",
+    "What would you do if you didn't need the money?",
+    "What's a problem here nobody wants to say out loud?",
+    "Who at this table would you want on your side in a crisis?",
+    "What's the strangest job you've ever done?",
+    "What's one thing that would make next month better for you?"
+  ]
+}
