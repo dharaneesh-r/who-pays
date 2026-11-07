@@ -6,12 +6,22 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../data/local/prefs_service.dart';
 
+/// What the game needs from the alarm, so a test can supply a silent one.
+abstract interface class Alarm {
+  Future<void> warmUp();
+  Future<void> fire();
+  Future<void> silence();
+  Future<void> tick();
+  Future<void> keepAwake(bool enabled);
+  Future<void> dispose();
+}
+
 /// Sound, vibration and keeping the screen awake.
 ///
 /// The siren is not decoration — it is the entire enforcement mechanism. The
 /// app cannot stop anyone touching their phone; it can only make sure the whole
 /// table knows instantly. So it has to be loud, immediate, and awkward.
-class AlarmService {
+class AlarmService implements Alarm {
   AlarmService(this._prefs);
 
   final PrefsService _prefs;
@@ -21,6 +31,7 @@ class AlarmService {
   bool _firing = false;
 
   /// Loads the siren so the first catch is not delayed by disk I/O.
+  @override
   Future<void> warmUp() async {
     if (_sirenReady) return;
     try {
@@ -36,6 +47,7 @@ class AlarmService {
   }
 
   /// Someone was caught. Siren + a long insistent vibration pattern.
+  @override
   Future<void> fire() async {
     if (_firing) return;
     _firing = true;
@@ -63,6 +75,7 @@ class AlarmService {
   }
 
   /// Stop the noise — the group has acknowledged the loser.
+  @override
   Future<void> silence() async {
     _firing = false;
     try {
@@ -74,6 +87,7 @@ class AlarmService {
   }
 
   /// A light tap for ordinary UI confirmations.
+  @override
   Future<void> tick() async {
     try {
       await HapticFeedback.selectionClick();
@@ -82,12 +96,14 @@ class AlarmService {
 
   /// The timer must stay visible without anyone touching the phone — which is
   /// the one thing the game forbids.
+  @override
   Future<void> keepAwake(bool enabled) async {
     try {
       await WakelockPlus.toggle(enable: enabled);
     } catch (_) {}
   }
 
+  @override
   Future<void> dispose() async {
     await silence();
     await keepAwake(false);
@@ -95,7 +111,7 @@ class AlarmService {
   }
 }
 
-final alarmServiceProvider = Provider<AlarmService>((ref) {
+final alarmServiceProvider = Provider<Alarm>((ref) {
   final service = AlarmService(ref.watch(prefsServiceProvider));
   ref.onDispose(service.dispose);
   return service;

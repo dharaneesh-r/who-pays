@@ -29,8 +29,8 @@ class GameController extends Notifier<GameState> {
     return const GameState();
   }
 
-  DetectorService get _detector => ref.read(detectorServiceProvider);
-  AlarmService get _alarm => ref.read(alarmServiceProvider);
+  Detector get _detector => ref.read(detectorServiceProvider);
+  Alarm get _alarm => ref.read(alarmServiceProvider);
 
   // ---- setup ----------------------------------------------------------------
 

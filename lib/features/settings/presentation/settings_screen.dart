@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../data/local/device_identity.dart';
 import '../../../data/local/prefs_service.dart';
 import '../../room/domain/join_link.dart';
+import '../../paywall/application/consent_service.dart';
 import '../../paywall/application/purchase_service.dart';
 import '../../paywall/presentation/paywall_sheet.dart';
 import '../../stats/application/stats_providers.dart';
@@ -145,6 +146,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           ],
           const Divider(height: 36),
+          // Required in the EEA/UK: people must be able to change their ad
+          // consent after the first prompt. UMP reports this as unnecessary
+          // everywhere else, so the row simply does not appear.
+          FutureBuilder<bool>(
+            future: ref.read(consentServiceProvider).privacyOptionsRequired(),
+            builder: (context, snap) {
+              if (snap.data != true) return const SizedBox.shrink();
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Ad privacy options'),
+                trailing: const Icon(Icons.tune, size: 18),
+                onTap: ref.read(consentServiceProvider).showPrivacyOptions,
+              );
+            },
+          ),
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Privacy policy'),

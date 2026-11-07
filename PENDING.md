@@ -34,7 +34,7 @@ Audited against the source on 2026-11-07, not from memory.
 
 | # | What | Notes |
 |---|---|---|
-| 14 | **UMP consent SDK not integrated** | Google requires a certified consent platform to serve ads in the EEA/UK. Fine for an India-only launch; required before the US/UK push the revenue plan depends on |
+| 14 | ~~UMP consent SDK not integrated~~ **FIXED** | Resolved before the first ad request; outside the EEA/UK it shows nothing. "Ad privacy options" appears in Settings only where required. The GDPR message must still be published in the AdMob console |
 | 15 | **Firebase not wired** — no Analytics, Crashlytics or Remote Config | Remote Config is the documented way to tune detection thresholds without shipping a release. Right now every threshold change needs a full store update |
 | 16 | ~~No privacy policy~~ **WRITTEN** | [web_guest/privacy.html](web_guest/privacy.html), linked in Settings. **Still needs hosting** on Cloudflare before the Play listing can reference it |
 | 17 | **iOS is unconfigured** | The `ios/` folder exists but has no camera or motion usage strings in `Info.plist`, no AdMob id, and has never been built |
@@ -43,7 +43,7 @@ Audited against the source on 2026-11-07, not from memory.
 
 | # | What | Notes |
 |---|---|---|
-| 18 | **No widget or integration tests** | 83 tests, all of pure logic. `GameController` and `RoomSession` — the two pieces holding the game together — have none |
+| 18 | ~~GameController had no tests~~ **PARTLY FIXED** | 12 controller tests via injectable Detector and Alarm interfaces. `RoomSession` still has none, and there are no widget tests |
 | 19 | **Detection partly verified on hardware** (Realme RMX2030, Android 10, BMI160). Arming, the leave-app catch, the siren and the full round flow all work. **Still untested: physical pick-up, rotation, table-bump false positives** — those need a human moving the phone | See [DEVICE_TEST.md](DEVICE_TEST.md) |
 
 ---

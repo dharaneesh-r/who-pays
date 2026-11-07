@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../data/remote/analytics_service.dart';
+import 'consent_service.dart';
 import 'purchase_service.dart';
 
 /// Interstitial on the result screen only.
@@ -35,6 +36,9 @@ class AdsService {
   Future<void> init() async {
     if (!_adsAllowed) return;
     try {
+      // EEA/UK consent must be resolved before the first ad request. Outside
+      // those regions this returns immediately without showing anything.
+      await _ref.read(consentServiceProvider).ensure();
       await MobileAds.instance.initialize();
       await preload();
     } catch (_) {/* no Play Services on this device */}
