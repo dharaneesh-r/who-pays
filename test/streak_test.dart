@@ -73,6 +73,29 @@ void main() {
     });
   });
 
+  group('shouldRemind', () {
+    const alive = Streak(current: 3, best: 3);
+    const alivePlayed = Streak(current: 3, best: 3, playedToday: true);
+    const dead = Streak.none;
+
+    test('reminds when a streak is alive and today is unplayed', () {
+      expect(shouldRemind(alive, enabled: true), isTrue);
+    });
+
+    test('stays quiet once today has been played — the streak is safe', () {
+      expect(shouldRemind(alivePlayed, enabled: true), isFalse);
+    });
+
+    test('never nags someone with no streak to lose', () {
+      expect(shouldRemind(dead, enabled: true), isFalse);
+    });
+
+    test('respects the setting above everything else', () {
+      expect(shouldRemind(alive, enabled: false), isFalse);
+      expect(shouldRemind(dead, enabled: false), isFalse);
+    });
+  });
+
   group('dayOf', () {
     test('strips the time', () {
       expect(dayOf(DateTime(2026, 11, 6, 23, 59)), DateTime(2026, 11, 6));

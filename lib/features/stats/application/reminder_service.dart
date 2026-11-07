@@ -74,8 +74,7 @@ class ReminderService {
 
     await cancel();
 
-    if (!await _prefs.remindersEnabled()) return;
-    if (!streak.isAlive || streak.playedToday) return;
+    if (!shouldRemind(streak, enabled: await _prefs.remindersEnabled())) return;
 
     final nights = streak.current == 1 ? 'night' : 'nights';
 

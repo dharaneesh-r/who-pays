@@ -15,6 +15,17 @@ class Streak {
   bool get isAlive => current > 0;
 }
 
+/// Should the evening reminder be scheduled?
+///
+/// Pure so the decision can be tested without waiting for 7:30pm. Three
+/// reasons not to send one, and each matters:
+///  - the player turned reminders off;
+///  - there is no streak, so there is nothing to lose and a nudge is just
+///    nagging;
+///  - they already played today, so the streak is safe.
+bool shouldRemind(Streak streak, {required bool enabled}) =>
+    enabled && streak.isAlive && !streak.playedToday;
+
 /// Calendar day, ignoring the time of day.
 DateTime dayOf(DateTime moment) =>
     DateTime(moment.year, moment.month, moment.day);

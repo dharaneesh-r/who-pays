@@ -95,6 +95,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: const TextStyle(color: Colors.white38, fontSize: 13),
             ),
           ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: reminders,
+            onChanged: (value) async {
+              if (value) {
+                // Android 13+ needs permission before anything can be shown.
+                await ref.read(reminderServiceProvider).requestPermission();
+              }
+              await ref.read(prefsServiceProvider).setRemindersEnabled(value);
+              ref.invalidate(remindersEnabledProvider);
+
+              final streak = await ref.read(streakProvider.future);
+              await ref.read(reminderServiceProvider).refresh(streak);
+            },
+            title: const Text('Evening reminder'),
+            subtitle: Text(
+              reminders
+                  ? 'A nudge at 7:30pm when your streak is about to end'
+                  : 'No reminders',
+              style: const TextStyle(color: Colors.white38, fontSize: 13),
+            ),
+          ),
           // Nothing to sell on an ads-only launch, so the whole section goes.
           if (!Monetisation.proEnabled) ...[
             const SizedBox(height: 20),
@@ -147,28 +169,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: text.bodyMedium?.copyWith(color: Colors.white38, fontSize: 13),
           ),
           ],
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: reminders,
-            onChanged: (value) async {
-              if (value) {
-                // Android 13+ needs permission before anything can be shown.
-                await ref.read(reminderServiceProvider).requestPermission();
-              }
-              await ref.read(prefsServiceProvider).setRemindersEnabled(value);
-              ref.invalidate(remindersEnabledProvider);
-
-              final streak = await ref.read(streakProvider.future);
-              await ref.read(reminderServiceProvider).refresh(streak);
-            },
-            title: const Text('Evening reminder'),
-            subtitle: Text(
-              reminders
-                  ? 'A nudge at 7:30pm when your streak is about to end'
-                  : 'No reminders',
-              style: const TextStyle(color: Colors.white38, fontSize: 13),
-            ),
-          ),
           const Divider(height: 36),
           // Required in the EEA/UK: people must be able to change their ad
           // consent after the first prompt. UMP reports this as unnecessary
