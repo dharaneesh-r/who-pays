@@ -58,6 +58,10 @@
   .err { color: var(--danger); font-size: 15px; margin-top: 10px; min-height: 20px; }
   .foot { color: rgba(255,255,255,.3); font-size: 13px; margin-top: auto; padding-top: 20px; }
   .hidden { display: none !important; }
+  button.link {
+    background: none; color: var(--muted); border: none;
+    font-size: 15px; font-weight: 400; margin-top: 22px;
+  }
 </style>
 </head>
 <body>
@@ -84,10 +88,16 @@
     <div id="clock" class="clock">00:00</div>
     <div id="hint" class="muted">Hold still — the round starts when your phone settles</div>
     <ul id="roundList"></ul>
+    <!-- A browser cannot see a screen unlock, so its detection is weaker than
+         the app's. Without a way to admit defeat, a guest whose pick-up went
+         undetected has no way to stay honest. -->
+    <button id="giveUp" class="link">I give up — I pay</button>
   </section>
 
   <p class="foot">No app needed. Keep this page open.</p>
 
-  <script type="module" src="./app.js"></script>
+  <!-- Absolute, not relative: this page is also served at /j/CODE, where a
+       relative src would resolve to /j/app.js and 404. -->
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

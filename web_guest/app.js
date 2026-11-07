@@ -247,6 +247,11 @@ async function join() {
     hide('join');
     show('lobby');
     await refreshPlayers(code);
+
+    // Act on the status the room is ALREADY in. Without this, someone who
+    // scans the QR after the host has started sits in the lobby forever,
+    // because followStatus otherwise only runs on a realtime change.
+    followStatus();
   } catch (e) {
     err.textContent = e.message || 'Could not join.';
   } finally {
@@ -392,6 +397,7 @@ function reasonText(reason) {
     motion: 'You picked the phone up',
     rotation: 'You turned the phone over',
     leftApp: 'You left the page',
+    conceded: 'You gave up',
   }[reason] || 'You cracked';
 }
 
@@ -401,5 +407,9 @@ function reasonText(reason) {
 const preset = codeFromUrl();
 if (preset) $('code').value = preset;
 $('joinBtn').addEventListener('click', join);
+$('giveUp').addEventListener('click', () => {
+  detector.trigger('conceded', performance.now());
+  render();
+});
 $('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') join(); });
 $('name').addEventListener('keydown', (e) => { if (e.key === 'Enter') join(); });
