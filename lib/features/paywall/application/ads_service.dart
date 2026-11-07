@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -25,10 +26,11 @@ class AdsService {
   /// release — shipping with these earns nothing, and serving live ads to
   /// yourself during testing gets the account banned.
   static const _testInterstitial = 'ca-app-pub-3940256099942544/1033173712';
+  static const _realInterstitial = 'ca-app-pub-7599014130116297/9835901990';
 
   static const _unitId = String.fromEnvironment(
     'ADMOB_INTERSTITIAL',
-    defaultValue: _testInterstitial,
+    defaultValue: kReleaseMode ? _realInterstitial : _testInterstitial,
   );
 
   bool get _adsAllowed => !_ref.read(entitlementsProvider).adsRemoved;

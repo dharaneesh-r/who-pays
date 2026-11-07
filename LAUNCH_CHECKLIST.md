@@ -113,21 +113,20 @@ and earn nothing.
 
 ### D1. Create the IDs
 
-1. [admob.google.com](https://admob.google.com) → sign in → create account
-2. **Apps → Add app → Android → "on a store?" No**, name it `Who Pays?`
-3. Copy the **App ID** — `ca-app-pub-XXXX~YYYY` (note the **`~`**)
-4. **Ad units → Add ad unit → Interstitial**, name it `Result interstitial`
-5. Copy the **Ad unit ID** — `ca-app-pub-XXXX/ZZZZ` (note the **`/`**)
+1. [admob.google.com](https://admob.google.com) → sign in → account created
+2. **App ID:** `ca-app-pub-7599014130116297~3845208711`
+3. **Ad unit ID (Interstitial):** `ca-app-pub-7599014130116297/9835901990`
 
 ### D2. Put them in the app
 
-App ID → `android/app/src/main/AndroidManifest.xml`, replace the value of
-`com.google.android.gms.ads.APPLICATION_ID`.
+Configured:
+- App ID: configured in `android/app/build.gradle.kts`
+- Interstitial ID: configured in `lib/features/paywall/application/ads_service.dart` (automatically uses real ID in release mode, and Google test ID in debug mode to prevent self-ad bans).
 
-Ad unit ID → passed at build time, no code change:
+Release build command:
 
 ```bash
-flutter build appbundle --release --no-tree-shake-icons --dart-define=ADMOB_INTERSTITIAL=ca-app-pub-XXXX/ZZZZ
+flutter build appbundle --release --no-tree-shake-icons --dart-define=ADMOB_INTERSTITIAL=ca-app-pub-7599014130116297/9835901990
 ```
 
 ### D3. Publish the GDPR message
@@ -187,7 +186,7 @@ never update the app on Play again — not a recoverable mistake.
 ### E3. Build the signed bundle
 
 ```bash
-cd /c/Users/hp/Desktop/app-development && flutter build appbundle --release --no-tree-shake-icons --dart-define=ADMOB_INTERSTITIAL=ca-app-pub-XXXX/ZZZZ
+tools/build.sh appbundle --dart-define=ADMOB_INTERSTITIAL=ca-app-pub-7599014130116297/9835901990
 ```
 
 Output: `build/app/outputs/bundle/release/app-release.aab`

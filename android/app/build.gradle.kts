@@ -57,7 +57,7 @@ android {
         //   -PadmobAppId=ca-app-pub-XXXXXXXX~YYYYYYYY
         manifestPlaceholders["admobAppId"] =
             (project.findProperty("admobAppId") as String?)
-                ?: "ca-app-pub-3940256099942544~3347511713"
+                ?: "ca-app-pub-7599014130116297~3845208711"
     }
 
     signingConfigs {
