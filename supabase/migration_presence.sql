@@ -13,8 +13,13 @@ alter table public.room_players
 create index if not exists room_players_last_seen_idx
   on public.room_players (room_code, last_seen);
 
--- Rebuilt so the standings view carries presence too.
-create or replace view public.room_standings as
+-- Dropped and rebuilt, not replaced. `create or replace view` can only append
+-- columns at the end — inserting `last_seen` before `crack_rank` makes it
+-- fail, and because the SQL editor runs the script in one transaction that
+-- failure rolled back the `alter table` above it too.
+drop view if exists public.room_standings;
+
+create view public.room_standings as
 select
   p.room_code,
   p.id,
