@@ -84,11 +84,15 @@ abstract final class AppTheme {
         side: BorderSide(color: Colors.white.withValues(alpha: 0.10)),
         labelStyle: TextStyle(
           fontFamily: body,
-          fontSize: 15,
+          fontSize: 13.5,
           fontVariations: weight(600),
           color: Colors.white.withValues(alpha: 0.92),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        // Tight enough that two stake chips fit on one row at 360dp. Any
+        // roomier and every chip claims a line of its own, which pushed the
+        // pack picker off the screen.
+        labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(14),
         ),

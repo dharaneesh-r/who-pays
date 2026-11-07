@@ -67,7 +67,9 @@ class _SetupViewState extends ConsumerState<SetupView> {
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+            // Generous bottom padding so the last row can scroll clear of the
+            // pinned action button instead of sitting half under it.
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
             children: [
               Text('The loser…', style: text.headlineMedium),
               const SizedBox(height: 14),
