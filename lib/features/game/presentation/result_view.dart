@@ -126,21 +126,40 @@ class ResultView extends ConsumerWidget {
           // The ad runs when leaving the result, never on arrival: an
           // interstitial landing on top of the siren would be unbearable, and
           // an ad during a round would cover the clock the table is watching.
-          FilledButton(
-            onPressed: () async {
-              await ref.read(adsServiceProvider).maybeShowOnResult();
-              controller.start();
-            },
-            child: const Text('PLAY AGAIN'),
-          ),
+          // At a table only the host can start the next round, or the phones
+          // would arm at different moments and the times would be nonsense.
+          if (session.inRoom && !session.isHost)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 18),
+              child: Text(
+                'Waiting for the host to start the next round…',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54),
+              ),
+            )
+          else
+            FilledButton(
+              onPressed: () async {
+                await ref.read(adsServiceProvider).maybeShowOnResult();
+                if (session.inRoom) {
+                  await ref.read(roomSessionProvider.notifier).playAgain();
+                } else {
+                  controller.start();
+                }
+              },
+              child: Text(session.inRoom ? 'NEXT ROUND' : 'PLAY AGAIN'),
+            ),
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () async {
               controller.reset();
+              if (session.inRoom) {
+                await ref.read(roomSessionProvider.notifier).leave();
+              }
               await ref.read(adsServiceProvider).maybeShowOnResult();
               if (context.mounted && context.canPop()) context.pop();
             },
-            child: const Text('DONE'),
+            child: Text(session.inRoom ? 'LEAVE THE TABLE' : 'DONE'),
           ),
           const SizedBox(height: 16),
         ],

@@ -193,7 +193,10 @@ class RoomSession extends Notifier<RoomSessionState> {
 
     switch (room.status) {
       case RoomStatus.settling:
-        if (phase == RoundPhase.setup || phase == RoundPhase.finished) {
+        // Only from `setup`. Starting from `finished` too would restart the
+        // round the instant it ended — the result screen would never be seen,
+        // because the room sits in `settling` for the whole round.
+        if (phase == RoundPhase.setup) {
           _reportedThisRound = false;
           game
             ..setStake(room.config.stake, custom: room.config.customStake)
@@ -205,6 +208,36 @@ class RoomSession extends Notifier<RoomSessionState> {
       case RoomStatus.running:
       case RoomStatus.finished:
         break;
+    }
+  }
+
+  /// Host only: once at most one player is left standing the round is over,
+  /// so close it for everyone. Without this the room stays in `settling`
+  /// forever and nothing can tell that a round ended.
+  Future<void> _closeRoundIfDecided(RoomSnapshot snapshot) async {
+    if (!state.isHost) return;
+    if (snapshot.room.status != RoomStatus.settling) return;
+    if (!snapshot.isDecided) return;
+
+    try {
+      await _repo.setStatus(snapshot.room.code, RoomStatus.finished);
+    } catch (_) {/* the local result still stands */}
+  }
+
+  /// Host only: send the table back to the lobby and straight into a new
+  /// round. Two steps because every phone resets on `lobby` before it can be
+  /// started again.
+  Future<void> playAgain() async {
+    final code = state.code;
+    if (code == null || !state.isHost) return;
+    try {
+      await _repo.resetRound(code);
+      await _repo.setStatus(code, RoomStatus.lobby);
+      // Let every phone process the reset before arming them again.
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      await _repo.setStatus(code, RoomStatus.settling);
+    } catch (e) {
+      state = state.copyWith(error: _message(e));
     }
   }
 
@@ -230,10 +263,9 @@ class RoomSession extends Notifier<RoomSessionState> {
   void _publish() {
     final room = _room;
     if (room == null) return;
-    state = state.copyWith(
-      snapshot: RoomSnapshot(room: room, players: _players),
-      joining: false,
-    );
+    final snapshot = RoomSnapshot(room: room, players: _players);
+    state = state.copyWith(snapshot: snapshot, joining: false);
+    _closeRoundIfDecided(snapshot);
   }
 
   void _stopWatching() {

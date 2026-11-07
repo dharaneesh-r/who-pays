@@ -44,7 +44,7 @@ Audited against the source on 2026-11-07, not from memory.
 | # | What | Notes |
 |---|---|---|
 | 18 | **No widget or integration tests** | 83 tests, all of pure logic. `GameController` and `RoomSession` — the two pieces holding the game together — have none |
-| 19 | **Detection is unverified on hardware** | The single biggest risk. See [DEVICE_TEST.md](DEVICE_TEST.md) |
+| 19 | **Detection partly verified on hardware** (Realme RMX2030, Android 10, BMI160). Arming, the leave-app catch, the siren and the full round flow all work. **Still untested: physical pick-up, rotation, table-bump false positives** — those need a human moving the phone | See [DEVICE_TEST.md](DEVICE_TEST.md) |
 
 ---
 
