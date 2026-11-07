@@ -28,6 +28,7 @@ dependencies:
   shared_preferences: ^2.5.5
   sqflite: ^2.4.2+1
   supabase_flutter: ^2.18.3
+  url_launcher: ^6.3.2
   uuid: ^4.6.0
   vibration: ^3.1.8
   wakelock_plus: ^1.6.1

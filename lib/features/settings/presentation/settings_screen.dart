@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/monetisation.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/local/device_identity.dart';
 import '../../../data/local/prefs_service.dart';
+import '../../room/domain/join_link.dart';
 import '../../paywall/application/purchase_service.dart';
 import '../../paywall/presentation/paywall_sheet.dart';
 import '../../stats/application/stats_providers.dart';
@@ -140,6 +144,56 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             style: text.bodyMedium?.copyWith(color: Colors.white38, fontSize: 13),
           ),
           ],
+          const Divider(height: 36),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Privacy policy'),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => launchUrl(
+              Uri.parse('${JoinLink.host}/privacy'),
+              mode: LaunchMode.externalApplication,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // The privacy policy tells people they can ask for their usage data
+          // to be deleted, and that this id is what identifies it. That
+          // promise only works if the id is actually reachable.
+          Text('Device ID', style: text.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'The only identifier we store. Send it to us if you want your '
+            'usage data deleted.',
+            style: text.bodyMedium?.copyWith(color: Colors.white38, fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          ref.watch(deviceIdProvider).when(
+                loading: () => const SizedBox(height: 20),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (id) => InkWell(
+                  onTap: () async {
+                    await Clipboard.setData(ClipboardData(text: id));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Device ID copied')),
+                    );
+                  },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          id,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12.5,
+                            color: Colors.white54,
+                          ),
+                        ),
+                      ),
+                      const Icon(Icons.copy, size: 16, color: Colors.white38),
+                    ],
+                  ),
+                ),
+              ),
           const SizedBox(height: 32),
         ],
       ),
