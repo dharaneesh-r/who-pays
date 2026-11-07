@@ -21,9 +21,9 @@ Audited against the source on 2026-11-07, not from memory.
 
 | # | What | Notes |
 |---|---|---|
-| 6 | **No settings screen at all** | No way to change your name, mute the siren, or restore purchases outside the paywall |
-| 7 | **Solo rounds are always saved as "You"** | `setPlayerName` is only called from the join screen, so the stats leaderboard is meaningless until you have joined a room once |
-| 8 | **No pack picker** | `selectedPackProvider` exists and is wired into the deck, but nothing ever sets it — the first pack always wins |
+| 6 | ~~No settings screen~~ **FIXED** | Built: name, siren toggle, Pro status, restore purchases |
+| 7 | ~~Solo rounds always saved as "You"~~ **FIXED** | Name is now set in Settings and used for solo rounds. Home shows "Set your name" in amber until one is saved |
+| 8 | ~~No pack picker~~ **FIXED** | Built in the setup screen as "Talk about…", with padlocks on paid packs |
 | 9 | **Streak has no reminder** | The streak is the only daily-retention mechanic, and nothing reminds anyone. `flutter_local_notifications` is not even a dependency |
 | 10 | **Focus Duel mode not built** | Listed in [CONTEXT.md](CONTEXT.md) as the async mode that gives weekday usage |
 | 11 | **Errors are invisible in the lobby** | `RoomSessionState.error` is only rendered on the join and host screens. A realtime failure mid-round shows the user nothing |
