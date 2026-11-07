@@ -87,7 +87,16 @@ group by duel_code, device_id, name;
 
 grant select on public.duel_wins to anon;
 
-alter publication supabase_realtime add table public.duel_scores;
+-- Guarded on purpose. The SQL editor runs a script as one transaction, so a
+-- failure here — the table already being published, or not owning the
+-- publication — would roll back the whole migration and silently leave no
+-- tables behind. Realtime is a nice-to-have; the duel works without it.
+do $$
+begin
+  alter publication supabase_realtime add table public.duel_scores;
+exception
+  when others then null;
+end $$;
 
 -- A duel nobody has played in for two months is abandoned.
 create or replace function public.purge_dead_duels()
