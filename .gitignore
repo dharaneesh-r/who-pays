@@ -44,10 +44,60 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Release signing — never commit these
+# ---------------------------------------------------------------------------
+# Secrets — never commit any of these
+#
+# Git history is permanent. Deleting a secret in a later commit does NOT
+# remove it: it stays in the history, and GitHub caches and indexes contents.
+# The only safe move is never committing it in the first place. Anything that
+# does slip through must be treated as compromised and rotated, not deleted.
+# ---------------------------------------------------------------------------
+
+# App signing. Losing the keystore means this app can never be updated on Play
+# again; leaking it means someone else can sign releases as you. Keep backups
+# somewhere private and off this machine.
 android/key.properties
+key.properties
 *.jks
 *.keystore
+*.p12
+*.pfx
+
+# Firebase / Google service accounts
+google-services.json
+GoogleService-Info.plist
+**/google-services.json
+**/GoogleService-Info.plist
+service-account*.json
+*-service-account.json
+
+# Apple signing
+*.p8
+*.mobileprovision
+*.cer
+*.certSigningRequest
+
+# Generic key material
+*.pem
+*.key
+id_rsa
+id_ed25519
+
+# Environment and local config
+.env
+.env.*
+!.env.example
+secrets.properties
+local.properties
+**/local.properties
+
+# Deploy tooling
+.vercel/
+.netlify/
+.wrangler/
+
+# Recorded sensor traces — device data, and noise in diffs
+traces/*.csv
 
 # Gradle build cache — 33MB of binary state, regenerated on every build.
 android/.gradle/
