@@ -49,7 +49,7 @@ purchase has ever executed.
 | Problem | Fix |
 |---|---|
 | `IconTreeShakerException: Could not find const_finder.dart.snapshot` | This Flutter install's cache is incomplete and `flutter precache --android` does not restore it. Build with `--no-tree-shake-icons`, or reinstall the Flutter SDK to a path without spaces to get a complete cache. Only cost is a slightly larger icon font. |
-| `Cannot lock execution history cache … already locked` | A killed build left a Gradle daemon holding the lock. `cd android && ./gradlew --stop` |
+| `classes.dex … being used by another process` / `Cannot lock execution history cache` | A killed build leaves a Gradle daemon holding a file handle on Windows. **Prevented** by `org.gradle.vfs.watch=false` in `android/gradle.properties`, and `tools/build.sh` retries once after stopping the daemons if it still happens. Use `tools/build.sh apk` or `tools/build.sh appbundle` rather than calling `flutter build` directly |
 | `NDK … did not have a source.properties file` | Was an empty stub from a failed download. **Resolved:** command-line tools installed and NDK 27.0.12077973 installed via `sdkmanager`; `ndkVersion` is now pinned in `android/app/build.gradle.kts`. The NDK is needed only so release builds can strip debug symbols |
 | Build runs the disk to 0 bytes | Gradle caches grow past 4 GB. Keep 15 GB free; `flutter clean` reclaims ~1 GB |
 

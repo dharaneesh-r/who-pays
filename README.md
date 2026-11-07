@@ -40,6 +40,19 @@ assets/
 flutter run
 ```
 
+## Build
+
+Use the wrapper rather than `flutter build` directly — it carries the flags
+this project needs and recovers from the Windows Gradle file lock:
+
+```bash
+tools/build.sh apk
+```
+
+```bash
+tools/build.sh appbundle --dart-define=ADMOB_INTERSTITIAL=ca-app-pub-xxx/yyy
+```
+
 Needs a **real Android device** — emulator sensors are not reliable enough for
 pick-up detection, and detection is the product.
 
