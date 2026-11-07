@@ -13,9 +13,9 @@ Audited against the source on 2026-11-07, not from memory.
 |---|---|---|
 | 1 | ~~A table can only play one round~~ **FIXED** | End-to-end testing showed worse: the round *restarted instantly* on being caught, so the result was never seen. The host now closes the round when decided, phones no longer auto-restart, and the host gets a NEXT ROUND button |
 | 2 | ~~Room status never reaches `finished`~~ **FIXED** | The host now sets `finished` once one player is left. `running` is still unused |
-| 3 | **The paywall advertises "Custom stakes", which do not exist.** `Stake.custom` is excluded from the setup UI (`if (stake != Stake.custom)`) and there is no text field | Charging ₹149 for a listed feature that is not there is a refund request and a 1-star review |
-| 4 | **Four paid card packs are sold but not written.** `ProductIds` lists `pack_couples`, `pack_team`, `pack_deep_talk`, `pack_desi`; only `friends.json` and `family.json` exist | Same problem as #3 — purchasable, undeliverable |
-| 5 | **Pack entitlements are never enforced.** `Entitlements.hasPack()` is written and tested but called from nowhere | Once packs exist, they would be free to everyone |
+| 3 | ~~Paywall advertises custom stakes that do not exist~~ **FIXED** | Built: a "something else" chip plus a text field, locked behind Pro so the paywall claim is real |
+| 4 | ~~Four paid card packs sold but not written~~ **FIXED** | Built: Couples, Team Lunch, Deep Talk and Desi, 15–18 prompts each. A test now fails if a product is on sale without a pack file |
+| 5 | ~~Pack entitlements never enforced~~ **FIXED** | `hasPack()` now gates the picker and the deck; locked packs show a padlock and open the paywall |
 
 ## 🟠 Real gaps — needed for a credible v1
 
