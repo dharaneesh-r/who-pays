@@ -123,7 +123,12 @@ class ResultView extends ConsumerWidget {
           // but it needs one obvious way to stop without leaving the screen.
           if (caught) ...[
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppTheme.danger),
+              // White on red: the scheme's own foreground for this colour came
+              // out dark brown and was barely readable.
+              style: FilledButton.styleFrom(
+                backgroundColor: AppTheme.danger,
+                foregroundColor: Colors.white,
+              ),
               onPressed: ref.read(alarmServiceProvider).silence,
               child: const Text('SILENCE THE SIREN'),
             ),
