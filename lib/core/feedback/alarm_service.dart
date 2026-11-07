@@ -4,12 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vibration/vibration.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
+import '../../data/local/prefs_service.dart';
+
 /// Sound, vibration and keeping the screen awake.
 ///
 /// The siren is not decoration — it is the entire enforcement mechanism. The
 /// app cannot stop anyone touching their phone; it can only make sure the whole
 /// table knows instantly. So it has to be loud, immediate, and awkward.
 class AlarmService {
+  AlarmService(this._prefs);
+
+  final PrefsService _prefs;
   final _player = AudioPlayer(playerId: 'siren');
 
   bool _sirenReady = false;
@@ -36,8 +41,12 @@ class AlarmService {
     _firing = true;
 
     try {
-      await warmUp();
-      if (_sirenReady) await _player.resume();
+      // Silenced for a library or a sleeping baby. The vibration below still
+      // fires, so the player is still caught.
+      if (await _prefs.sirenEnabled()) {
+        await warmUp();
+        if (_sirenReady) await _player.resume();
+      }
     } catch (_) {/* keep going — the vibration still works */}
 
     try {
@@ -87,7 +96,7 @@ class AlarmService {
 }
 
 final alarmServiceProvider = Provider<AlarmService>((ref) {
-  final service = AlarmService();
+  final service = AlarmService(ref.watch(prefsServiceProvider));
   ref.onDispose(service.dispose);
   return service;
 });

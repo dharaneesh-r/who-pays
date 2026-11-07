@@ -6,6 +6,7 @@ import '../../features/home/presentation/home_screen.dart';
 import '../../features/room/presentation/host_setup_screen.dart';
 import '../../features/room/presentation/join_room_screen.dart';
 import '../../features/room/presentation/room_lobby_screen.dart';
+import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/stats/presentation/stats_screen.dart';
 
 final appRouter = GoRouter(
@@ -34,6 +35,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: StatsScreen.path,
       builder: (_, _) => const StatsScreen(),
+    ),
+    GoRoute(
+      path: SettingsScreen.path,
+      builder: (_, _) => const SettingsScreen(),
     ),
     GoRoute(
       path: DetectorDebugScreen.path,

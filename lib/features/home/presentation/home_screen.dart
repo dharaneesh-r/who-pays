@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
+import '../../../data/local/prefs_service.dart';
 import '../../../data/remote/supabase_init.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../../detector/presentation/detector_debug_screen.dart';
 import '../../game/presentation/game_screen.dart';
 import '../../room/presentation/host_setup_screen.dart';
@@ -20,6 +23,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     final online = ref.watch(supabaseReadyProvider);
+    final hasName = ref.watch(hasPlayerNameProvider).value ?? true;
 
     return Scaffold(
       body: SafeArea(
@@ -69,9 +73,28 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => context.push(StatsScreen.path),
-                child: const Text('My record'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => context.push(StatsScreen.path),
+                    child: const Text('My record'),
+                  ),
+                  const Text('·', style: TextStyle(color: Colors.white24)),
+                  TextButton(
+                    onPressed: () => context.push(SettingsScreen.path),
+                    // A player with no name saved shows up on the leaderboard
+                    // as "You", so nudge them once rather than silently
+                    // collecting meaningless stats.
+                    child: Text(
+                      hasName ? 'Settings' : 'Set your name',
+                      style: TextStyle(
+                        color: hasName ? null : AppTheme.accent,
+                        fontWeight: hasName ? null : FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               if (kDebugMode)
                 TextButton(
