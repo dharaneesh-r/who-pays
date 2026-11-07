@@ -76,3 +76,62 @@ Bugs that only appeared once the app ran on real hardware and a real browser:
 | Paywall said "That's today's free rounds" when you tapped a locked pack | One headline for three different reasons |
 | DONE stranded the player on the setup screen | The ad returned after `reset()` had unmounted the widget, so `context.pop()` was skipped |
 | Next round could start behind a full-screen ad | `InterstitialAd.show()` resolves when the ad *appears*, not when it is dismissed |
+
+---
+
+## Repair pass — 7 Nov 2026
+
+### Fixed in code
+
+| What | Why it mattered |
+|---|---|
+| Join no longer requires `last_seen` | The app sent the column on every join; the live database does not have it, so PostgREST rejected the whole request and **nobody could join a table at all**. Now it retries without the column and carries on. |
+| Heartbeat stops after one refusal | It would otherwise retry a guaranteed-failing write every 15s for the whole round. |
+| AdMob app id is a build placeholder | It was hardcoded to Google's test id in the manifest, where `--dart-define` cannot reach it. Now `-PadmobAppId=...` at build time. |
+| `tools/make_keystore.sh` | Release builds were silently falling back to the **debug** signing key, which Play rejects outright. |
+| `supabase/migration_fix.sql` | One idempotent script: the missing column, the standings view, and the four purge jobs that had never been scheduled. |
+
+Tests: 143 passing (5 new, covering the missing-column predicate).
+
+### Still needs an account, not code
+
+1. Run `supabase/migration_fix.sql` — **check the project ref is `uhslpvssmpmhtmlmncxo` first.** The previous run reported success against what was almost certainly a different project.
+2. `bash tools/make_keystore.sh`, then back both files up off this machine.
+3. Deploy `web_guest/` — `who-pays.pages.dev` does not resolve, so the privacy URL and every QR code are dead.
+4. Real AdMob ids, passed at build time.
+5. Record a sensor trace so the detector thresholds can be fitted (`DETECTOR_TUNING.md`).
+
+---
+
+## RLS lockdown — 7 Nov 2026
+
+**Was:** both room tables were `for all to anon using (true)`. The publishable
+key ships in the app and is served in `web_guest/app.js`, so anyone could
+delete any table or edit anyone's result. Table codes are 4 characters from a
+24-letter alphabet — about 331,000 combinations, trivially enumerated.
+
+**Now:** every client sends an `x-device-id` header and the policies only
+allow writes to rows carrying that id.
+
+| Table | select | insert | update / delete |
+|---|---|---|---|
+| `rooms` | anyone | yourself as host | host only |
+| `room_players` | anyone | your own row | your own row |
+
+"Play again" clears every player's row, which per-row policies rightly forbid,
+so it moved to `reset_round()` — a definer function that checks the caller is
+that room's host.
+
+**What this is not.** It is not authentication. A caller can put any device id
+in the header. It raises the bar from "guess a 4-letter code" to "already know
+someone's random UUID", which kills enumeration but not targeted
+impersonation. Real auth means anonymous sign-in and `auth.uid()` — a bigger
+change than belongs in launch week, and worth doing later.
+
+**Run order matters:** `migration_fix.sql` first, then `migration_rls.sql`.
+Both are idempotent. The app tolerates either not having run yet — a missing
+`last_seen` column and a missing `reset_round` function both fall back.
+
+**Not yet tightened:** `duels` and `duel_scores` still use blanket policies.
+Lower risk (no destructive operation exposed), but they should get the same
+treatment eventually.

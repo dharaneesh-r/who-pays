@@ -47,6 +47,17 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // The AdMob app id has to live in the manifest, so a --dart-define
+        // cannot reach it. Supplied here instead, so the real id is set in
+        // one place at build time rather than edited into a tracked file and
+        // accidentally committed — or, worse, accidentally not.
+        //
+        // Defaults to Google's public test app id. Override with:
+        //   -PadmobAppId=ca-app-pub-XXXXXXXX~YYYYYYYY
+        manifestPlaceholders["admobAppId"] =
+            (project.findProperty("admobAppId") as String?)
+                ?: "ca-app-pub-3940256099942544~3347511713"
     }
 
     signingConfigs {

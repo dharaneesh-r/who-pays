@@ -29,6 +29,25 @@ if [[ "$TARGET" == "apk" && ! " $* " =~ " --split-per-abi " ]]; then
   ARGS+=(--target-platform android-arm64)
 fi
 
+# Pre-flight. These are the two things that are invisible until it is too
+# late: a build with Google's test ad unit earns nothing, and a build with the
+# wrong JOIN_HOST prints QR codes that lead somewhere dead — on paper, on a
+# table, in front of people. Both are silent failures, so say them out loud.
+warned=0
+if [[ ! " $* " =~ "ADMOB_INTERSTITIAL=" ]]; then
+  echo "⚠ ads: building with Google's TEST ad unit — this build earns nothing."
+  echo "    add --dart-define=ADMOB_INTERSTITIAL=ca-app-pub-…/… for a real one"
+  echo "    (and -PadmobAppId=ca-app-pub-…~… for the manifest app id)"
+  warned=1
+fi
+if [[ ! " $* " =~ "JOIN_HOST=" ]]; then
+  host=$(grep -oE "defaultValue: '[^']+'" lib/features/room/domain/join_link.dart | head -1 | sed "s/defaultValue: '//;s/'//")
+  echo "⚠ links: QR codes and the privacy link will point at $host"
+  echo "    add --dart-define=JOIN_HOST=https://your-domain if that is not live"
+  warned=1
+fi
+[[ $warned -eq 1 ]] && echo
+
 LOG="$(mktemp -t whopays-build-XXXXXX.log)"
 
 run_build() {

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -96,6 +97,30 @@ class RoomRepository implements RoomRepo {
   }
 
   /// Joins, or rejoins after the app was killed — the same device keeps its row.
+  /// Whether this database has the presence column.
+  ///
+  /// It is a deployment fact, not a code fact: an app build can reach a
+  /// database that has not had the presence migration applied yet. Sending
+  /// `last_seen` to such a database makes PostgREST reject the entire
+  /// request, which took joining a table from "presence is a bit stale" to
+  /// "nobody can join at all". Losing the whole feature because one optional
+  /// column is missing is never the right trade.
+  ///
+  /// Starts optimistic and latches off the first time the server says the
+  /// column is unknown, so the cost is one failed request per app run.
+  bool _presenceSupported = true;
+
+  /// True when this error means "that column does not exist here".
+  ///
+  /// PostgREST answers in two different ways depending on whether it is
+  /// writing (its own schema cache, PGRST204) or reading (Postgres itself,
+  /// 42703), and both mean the same thing to us.
+  @visibleForTesting
+  static bool isMissingPresenceColumn(Object e) =>
+      e is PostgrestException &&
+      (e.code == 'PGRST204' || e.code == '42703') &&
+      (e.message.contains('last_seen'));
+
   @override
   Future<Room> joinRoom({
     required String code,
@@ -107,12 +132,27 @@ class RoomRepository implements RoomRepo {
       throw const RoomUnavailable('No table with that code.');
     }
 
-    await _db.from('room_players').upsert({
-      'room_code': code,
-      'device_id': deviceId,
-      'name': name,
-      'last_seen': DateTime.now().toUtc().toIso8601String(),
-    }, onConflict: 'room_code,device_id');
+    Map<String, dynamic> row() => {
+          'room_code': code,
+          'device_id': deviceId,
+          'name': name,
+          if (_presenceSupported)
+            'last_seen': DateTime.now().toUtc().toIso8601String(),
+        };
+
+    try {
+      await _db
+          .from('room_players')
+          .upsert(row(), onConflict: 'room_code,device_id');
+    } on PostgrestException catch (e) {
+      if (!isMissingPresenceColumn(e)) rethrow;
+      _presenceSupported = false;
+      // Retry without it: being at the table matters more than knowing
+      // exactly when someone was last seen.
+      await _db
+          .from('room_players')
+          .upsert(row(), onConflict: 'room_code,device_id');
+    }
 
     return Room.fromRow(rows.first);
   }
@@ -142,11 +182,20 @@ class RoomRepository implements RoomRepo {
     required String code,
     required String deviceId,
   }) async {
-    await _db
-        .from('room_players')
-        .update({'last_seen': DateTime.now().toUtc().toIso8601String()})
-        .eq('room_code', code)
-        .eq('device_id', deviceId);
+    if (!_presenceSupported) return;
+    try {
+      await _db
+          .from('room_players')
+          .update({'last_seen': DateTime.now().toUtc().toIso8601String()})
+          .eq('room_code', code)
+          .eq('device_id', deviceId);
+    } on PostgrestException catch (e) {
+      if (!isMissingPresenceColumn(e)) rethrow;
+      // Stop beating against a database that cannot record it. Everyone
+      // stays listed as present, which is how the app behaved before
+      // presence existed.
+      _presenceSupported = false;
+    }
   }
 
   /// Does this room still exist? Used to decide whether a saved code is worth
@@ -172,13 +221,27 @@ class RoomRepository implements RoomRepo {
   }
 
   /// Clears every player's catch so the same table can play again.
+  ///
+  /// Goes through a definer function rather than a direct update, because
+  /// this is the one write that legitimately touches other people's rows.
+  /// The function checks the caller really is the host of this room; letting
+  /// the policy allow it instead would let anyone wipe anyone's results.
   @override
   Future<void> resetRound(String code) async {
-    await _db.from('room_players').update({
-      'caught_at': null,
-      'lasted_ms': null,
-      'catch_reason': null,
-    }).eq('room_code', code);
+    try {
+      await _db.rpc('reset_round', params: {'p_code': code});
+    } on PostgrestException catch (e) {
+      // PGRST202: the function is not there, so this database has not had
+      // the lockdown migration yet. Under the old blanket policy the direct
+      // update still works, and an app build must not be able to break
+      // "play again" on a database that simply has not caught up.
+      if (e.code != 'PGRST202') rethrow;
+      await _db.from('room_players').update({
+        'caught_at': null,
+        'lasted_ms': null,
+        'catch_reason': null,
+      }).eq('room_code', code);
+    }
   }
 
   /// This phone was caught. Written once — a later report must never overwrite

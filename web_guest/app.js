@@ -27,8 +27,18 @@ const CFG = {
   armingGraceMs: 3000,
 };
 
+// Declared before the client, because every request has to carry it.
+// `deviceId` is a function declaration, so it is hoisted and safe to call
+// here even though its body appears further down.
+const DEVICE = deviceId();
+
 const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
+  // Says which device this is. The security policies only permit changes to
+  // rows carrying this id, which is what stops anyone holding this key —
+  // and it is public, right there above — from deleting other people's
+  // tables. Table codes are four guessable letters; device ids are not.
+  global: { headers: { 'x-device-id': DEVICE } },
 });
 
 const $ = (id) => document.getElementById(id);
@@ -47,7 +57,6 @@ function deviceId() {
   return id;
 }
 
-const DEVICE = deviceId();
 let room = null;
 let players = [];
 let channel = null;
@@ -243,6 +252,7 @@ async function join() {
     if (up.error) throw up.error;
 
     await startSensors();
+    startHeartbeat(code);
     subscribe(code);
     hide('join');
     show('lobby');
@@ -257,6 +267,42 @@ async function join() {
   } finally {
     $('joinBtn').disabled = false;
   }
+}
+
+// "I am still here."
+//
+// The phone app sends this every 15 seconds; this page did not, which was
+// harmless only while the database had no last_seen column to compare
+// against. Once it does, a guest who never reports stops counting as being
+// at the table after 45 seconds and is deleted after two minutes — so a web
+// guest would be dropped from the game mid-round, while still looking fine
+// on their own screen.
+let heartbeat = null;
+let presenceSupported = true;
+
+function startHeartbeat(code) {
+  stopHeartbeat();
+  const beat = async () => {
+    if (!presenceSupported) return;
+    const { error } = await db.from('room_players')
+      .update({ last_seen: new Date().toISOString() })
+      .eq('room_code', code)
+      .eq('device_id', DEVICE);
+    // PGRST204 (write path) and 42703 (read path) both mean the migration
+    // has not been applied here yet. Stop asking rather than retry forever.
+    if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+      presenceSupported = false;
+    }
+  };
+  beat();
+  // Comfortably inside the 45-second window, so one missed beat on a bad
+  // cafe connection does not look like someone walking out.
+  heartbeat = setInterval(beat, 15000);
+}
+
+function stopHeartbeat() {
+  if (heartbeat) clearInterval(heartbeat);
+  heartbeat = null;
 }
 
 function subscribe(code) {

@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../features/detector/presentation/detector_debug_screen.dart';
+import '../../features/detector/presentation/trace_screen.dart';
 import '../../features/duel/presentation/duel_screen.dart';
 import '../../features/game/presentation/game_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -44,6 +45,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: SettingsScreen.path,
       builder: (_, _) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: TraceScreen.path,
+      builder: (_, _) => const TraceScreen(),
     ),
     GoRoute(
       path: DetectorDebugScreen.path,

@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/detection_config.dart';
 import '../../../core/theme/app_theme.dart';
+import 'package:go_router/go_router.dart';
+
 import '../application/detector_service.dart';
 import '../domain/detector_models.dart';
+import 'trace_screen.dart';
 
 /// Live sensor read-out and detector state. Kept in the app behind a debug flag
 /// permanently: when a group reports a false positive, this screen is the only
@@ -77,6 +80,14 @@ class DetectorDebugScreen extends ConsumerWidget {
               OutlinedButton(
                 onPressed: service.stop,
                 child: const Text('STOP'),
+              ),
+              const SizedBox(height: 10),
+              // Capturing labelled sensor data beats reading these numbers off
+              // the screen: the thresholds can then be fitted to what the
+              // device actually does.
+              OutlinedButton(
+                onPressed: () => context.push(TraceScreen.path),
+                child: const Text('RECORD A TRACE'),
               ),
               const SizedBox(height: 16),
             ],

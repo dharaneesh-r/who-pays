@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/monetisation.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/local/device_identity.dart';
 import '../../../data/local/prefs_service.dart';
+import '../../detector/presentation/detector_debug_screen.dart';
 import '../../room/domain/join_link.dart';
 import '../../paywall/application/consent_service.dart';
 import '../../paywall/application/purchase_service.dart';
@@ -193,6 +195,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Uri.parse('${JoinLink.host}/privacy'),
               mode: LaunchMode.externalApplication,
             ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Sensor test'),
+            subtitle: Text(
+              'Check how this phone reads movement, and record a trace if '
+              'the detector gets it wrong here.',
+              style: text.bodyMedium
+                  ?.copyWith(color: Colors.white38, fontSize: 13),
+            ),
+            trailing: const Icon(Icons.chevron_right, size: 20),
+            onTap: () => context.push(DetectorDebugScreen.path),
           ),
           const SizedBox(height: 8),
           // The privacy policy tells people they can ask for their usage data

@@ -48,3 +48,6 @@ app.*.map.json
 android/key.properties
 *.jks
 *.keystore
+
+# Gradle build cache — 33MB of binary state, regenerated on every build.
+android/.gradle/
