@@ -18,7 +18,7 @@ if (hasReleaseKey) {
 }
 
 android {
-    namespace = "in.nearle.who_pays"
+    namespace = "in.dharaneesh.who_pays"
     compileSdk = flutter.compileSdkVersion
     // Pinned rather than `flutter.ndkVersion` (28.2.x), because this is the
     // version AGP defaults to and the one installed here. No plugin compiles
@@ -40,7 +40,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "in.nearle.who_pays"
+        applicationId = "in.dharaneesh.who_pays"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

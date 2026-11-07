@@ -116,7 +116,7 @@ phone-free dinner streaks, and a siren nobody enjoys hearing.
 
 ## Contact details
 
-- **Email:** care@nearle.in
+- **Email:** care@dharaneesh.in
 - **Website:** https://who-pays.pages.dev
 - **Privacy policy:** https://who-pays.pages.dev/privacy
 

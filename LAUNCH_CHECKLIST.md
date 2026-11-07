@@ -93,7 +93,7 @@ needs a full store update and another review.
 
 1. [console.firebase.google.com](https://console.firebase.google.com) → **Add project** → `who-pays`
 2. Add an **Android** app
-   - Package name: **`in.nearle.who_pays`** (must match exactly)
+   - Package name: **`in.dharaneesh.who_pays`** (must match exactly)
    - Nickname: Who Pays?
    - SHA-1: skip for now
 3. Download **`google-services.json`**

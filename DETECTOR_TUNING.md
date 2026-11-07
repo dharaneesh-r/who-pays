@@ -31,7 +31,7 @@ file usable as evidence rather than a blob of numbers:
 ## 2. Pull it off the phone
 
 ```bash
-adb pull /sdcard/Android/data/in.nearle.who_pays/files/ traces/
+adb pull /sdcard/Android/data/in.dharaneesh.who_pays/files/ traces/
 ```
 
 No root and no debuggable build needed — it is written to the app's own
