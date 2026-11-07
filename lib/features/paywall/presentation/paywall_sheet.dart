@@ -9,10 +9,28 @@ import '../domain/entitlements.dart';
 ///
 /// One price, bought once, stated plainly. No countdown timers, no fake
 /// discounts — the whole pitch is "you clearly play this, so own it".
-class PaywallSheet extends ConsumerWidget {
-  const PaywallSheet({super.key});
+/// Why the paywall appeared. The headline has to match what the player just
+/// did — telling someone who tapped a locked pack that they are out of rounds
+/// is simply wrong.
+enum PaywallReason { outOfRounds, lockedPack, customStake }
 
-  static Future<void> show(BuildContext context) {
+extension on PaywallReason {
+  String get headline => switch (this) {
+        PaywallReason.outOfRounds => 'That\'s today\'s free rounds',
+        PaywallReason.lockedPack => 'That pack is part of Pro',
+        PaywallReason.customStake => 'Custom stakes are part of Pro',
+      };
+}
+
+class PaywallSheet extends ConsumerWidget {
+  const PaywallSheet({super.key, this.reason = PaywallReason.outOfRounds});
+
+  final PaywallReason reason;
+
+  static Future<void> show(
+    BuildContext context, {
+    PaywallReason reason = PaywallReason.outOfRounds,
+  }) {
     return showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surface,
@@ -20,7 +38,7 @@ class PaywallSheet extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => const PaywallSheet(),
+      builder: (_) => PaywallSheet(reason: reason),
     );
   }
 
@@ -37,7 +55,7 @@ class PaywallSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('That\'s today\'s free rounds', style: text.headlineMedium),
+            Text(reason.headline, style: text.headlineMedium),
             const SizedBox(height: 10),
             Text(
               'Unlock it once and keep it forever. No subscription.',

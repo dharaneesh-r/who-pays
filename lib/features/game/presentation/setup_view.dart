@@ -91,7 +91,8 @@ class _SetupViewState extends ConsumerState<SetupView> {
                     selected: state.config.stake == Stake.custom,
                     onSelected: (_) {
                       if (!isPro) {
-                        PaywallSheet.show(context);
+                        PaywallSheet.show(context,
+                            reason: PaywallReason.customStake);
                         return;
                       }
                       controller.setStake(
@@ -205,7 +206,8 @@ class _PackPicker extends ConsumerWidget {
             selected: effective == pack.id,
             onSelected: (_) {
               if (!entitlements.hasPack(pack.id)) {
-                PaywallSheet.show(context);
+                PaywallSheet.show(context,
+                    reason: PaywallReason.lockedPack);
                 return;
               }
               ref.read(selectedPackProvider.notifier).select(pack.id);
