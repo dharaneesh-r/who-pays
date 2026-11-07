@@ -59,3 +59,20 @@ Audited against the source on 2026-11-07, not from memory.
 7. **#9, #10, #13** — retention features, after launch.
 8. **#14** before any Europe or US push.
 9. **#17** only if iOS is worth it.
+
+---
+
+## Fixed after on-device testing (2026-11-07)
+
+Bugs that only appeared once the app ran on real hardware and a real browser:
+
+| What | How it showed up |
+|---|---|
+| Guest page 404'd on its own script | `./app.js` resolved to `/j/app.js` — **every QR scan** landed on a dead page |
+| Guest stuck in lobby if the round had started | `followStatus()` only ran on realtime *changes*, never after joining |
+| Room round restarted the instant it ended | Room stayed in `settling`, so the result screen was never seen and the timer ran forever |
+| "So you pays the bill" | Third-person stake label used where second person was needed |
+| "You has cracked first 6 times" | The fallback name is a pronoun |
+| Paywall said "That's today's free rounds" when you tapped a locked pack | One headline for three different reasons |
+| DONE stranded the player on the setup screen | The ad returned after `reset()` had unmounted the widget, so `context.pop()` was skipped |
+| Next round could start behind a full-screen ad | `InterstitialAd.show()` resolves when the ad *appears*, not when it is dismissed |
