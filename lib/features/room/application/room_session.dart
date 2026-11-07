@@ -235,8 +235,14 @@ class RoomSession extends Notifier<RoomSessionState> {
         }
       case RoomStatus.lobby:
         if (phase != RoundPhase.setup) game.reset();
-      case RoomStatus.running:
       case RoomStatus.finished:
+        // The round is over for the whole table. A phone that was caught has
+        // already finished on its own; one still counting has to be told, or
+        // it sits there running forever with the result already decided.
+        if (phase == RoundPhase.running || phase == RoundPhase.settling) {
+          game.endBecauseSomeoneElseCracked();
+        }
+      case RoomStatus.running:
         break;
     }
   }

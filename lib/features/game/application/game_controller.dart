@@ -92,6 +92,26 @@ class GameController extends Notifier<GameState> {
     _detector.trigger(CatchReason.conceded);
   }
 
+  /// Somebody else cracked, so this round is over for everyone.
+  ///
+  /// Only the phone that is caught learns it from its own sensors; every other
+  /// phone has to be told. Without this the table's round ends, the loser sees
+  /// their result, and the survivors keep staring at a running clock with
+  /// nothing left to decide — which is exactly what used to happen.
+  ///
+  /// This phone survived: it was still running when the round closed.
+  void endBecauseSomeoneElseCracked() {
+    if (state.phase != RoundPhase.running &&
+        state.phase != RoundPhase.settling) {
+      return;
+    }
+    _detector.stop();
+    _finish(RoundResult(
+      outcome: RoundOutcome.survived,
+      lasted: _clock.elapsed,
+    ));
+  }
+
   /// Back to setup, ready for another round.
   void reset() {
     _teardown();

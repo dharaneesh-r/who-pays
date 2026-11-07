@@ -338,4 +338,58 @@ void main() {
       expect(session().error, isNull);
     });
   });
+
+  /// Regression: when the round closes, every phone has to stop.
+  ///
+  /// Found by an end-to-end run, not by these tests. The room reached
+  /// `finished`, the player who cracked saw their result, and every other
+  /// phone kept counting — the "why is my timer still running?" bug.
+  /// `RoomStatus.finished` was a no-op in the status handler, so nothing ever
+  /// told the local game the round was over.
+  group('a finished room ends the local round', () {
+    Future<void> roundInProgress() async {
+      await joinAsGuest();
+      repo.rooms.add(repo.room(RoomStatus.settling));
+      await settle();
+      detector.emit(DetectorState.armed);
+      await settle();
+    }
+
+    test('a phone still counting is told the round is over', () async {
+      await roundInProgress();
+      expect(game().phase, RoundPhase.running,
+          reason: 'precondition: this phone is mid-round');
+
+      repo.rooms.add(repo.room(RoomStatus.finished));
+      await settle();
+
+      expect(game().phase, RoundPhase.finished);
+      expect(game().result?.outcome, RoundOutcome.survived,
+          reason: 'this phone was never caught — someone else cracked');
+    });
+
+    test('a phone already caught keeps its own result', () async {
+      await roundInProgress();
+      detector.trigger(CatchReason.motion);
+      await settle();
+      final caughtFor = game().result?.lasted;
+      expect(game().result?.outcome, RoundOutcome.caught);
+
+      repo.rooms.add(repo.room(RoomStatus.finished));
+      await settle();
+
+      expect(game().result?.outcome, RoundOutcome.caught,
+          reason: 'closing the round must not rewrite who lost');
+      expect(game().result?.lasted, caughtFor);
+    });
+
+    test('a phone back at setup is left alone', () async {
+      await joinAsGuest();
+      repo.rooms.add(repo.room(RoomStatus.finished));
+      await settle();
+
+      expect(game().phase, RoundPhase.setup,
+          reason: 'nothing was running, so there is nothing to end');
+    });
+  });
 }

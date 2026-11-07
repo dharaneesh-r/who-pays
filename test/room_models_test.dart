@@ -4,6 +4,7 @@ import 'package:who_pays/features/game/domain/game_models.dart';
 import 'package:who_pays/features/room/domain/room_models.dart';
 
 void main() {
+  _presenceUnknownTests();
   final t0 = DateTime.utc(2026, 11, 6, 20);
 
   const room = Room(
@@ -263,6 +264,65 @@ void main() {
       );
       expect(snapshot.playerFor('a')?.name, 'Ramesh');
       expect(snapshot.playerFor('zzz'), isNull);
+    });
+  });
+}
+
+/// Regression: a database without the presence column must not eject
+/// everybody.
+///
+/// Found by an end-to-end run, not by a unit test — the host's phone kept
+/// counting after the round had already been marked finished. `last_seen` fell
+/// back to `joined_at`, so 45 seconds after joining every player looked
+/// departed, `stillIn` emptied, and the round "resolved" with nobody having
+/// been caught.
+const _room = Room(
+  code: 'ABCD',
+  hostId: 'host-device',
+  status: RoomStatus.running,
+  config: GameConfig(),
+);
+
+void _presenceUnknownTests() {
+  RoomPlayer player(String name, {required Map<String, dynamic> extra}) =>
+      RoomPlayer.fromRow({
+        'id': 'id-$name',
+        'device_id': 'dev-$name',
+        'name': name,
+        'joined_at':
+            DateTime.now().subtract(const Duration(minutes: 10)).toIso8601String(),
+        ...extra,
+      });
+
+  group('presence when the column is missing', () {
+    test('a player with no last_seen is still at the table', () {
+      final snap = RoomSnapshot(
+        room: _room,
+        players: [player('Asha', extra: {})],
+      );
+      expect(snap.stillIn, hasLength(1));
+      expect(snap.departed, isEmpty);
+    });
+
+    test('the round is not decided just because presence is unknown', () {
+      final snap = RoomSnapshot(
+        room: _room,
+        players: [player('Asha', extra: {}), player('Bala', extra: {})],
+      );
+      expect(snap.isDecided, isFalse,
+          reason: 'two live players, nobody caught');
+    });
+
+    test('an explicit stale last_seen still counts as departed', () {
+      final stale = DateTime.now().subtract(const Duration(minutes: 5));
+      final snap = RoomSnapshot(
+        room: _room,
+        players: [
+          player('Asha', extra: {'last_seen': stale.toIso8601String()}),
+        ],
+      );
+      expect(snap.departed, hasLength(1),
+          reason: 'presence still works where the column exists');
     });
   });
 }

@@ -69,7 +69,13 @@ class RoomPlayer {
 
   /// Last time this phone reported in. A player who closes the app stops
   /// touching this, which is how the table notices they are gone.
-  final DateTime lastSeen;
+  /// When this phone last said it was still here.
+  ///
+  /// Null means the database has no presence column at all — not that the
+  /// player is absent. The two must not be confused: treating "unknown" as
+  /// "gone" ejects everybody 45 seconds after they join, which silently ends
+  /// the round and blames the wrong person.
+  final DateTime? lastSeen;
 
   /// Null while still in the game.
   final DateTime? caughtAt;
@@ -90,9 +96,11 @@ class RoomPlayer {
       deviceId: row['device_id'] as String,
       name: row['name'] as String,
       joinedAt: joined,
-      // Older rows predate the presence column; treat them as just-seen rather
-      // than instantly absent.
-      lastSeen: DateTime.tryParse(row['last_seen'] as String? ?? '') ?? joined,
+      // Absent column (migration not applied) stays null, which means
+      // "presence is unknowable here" rather than "left the table".
+      lastSeen: row['last_seen'] == null
+          ? null
+          : DateTime.tryParse(row['last_seen'] as String? ?? ''),
       caughtAt: row['caught_at'] == null
           ? null
           : DateTime.tryParse(row['caught_at'] as String),
@@ -129,8 +137,13 @@ class RoomSnapshot {
 
   /// A caught player stays on the board forever — they already have a result.
   /// Only someone still playing can go absent.
+  /// A database without the presence column cannot tell us who wandered off,
+  /// so everyone counts as present — exactly how the app behaved before
+  /// presence existed. Better a stuck table than ejecting live players.
   bool isAtTable(RoomPlayer p) =>
-      p.isOut || _now.difference(p.lastSeen) < presenceTimeout;
+      p.isOut ||
+      p.lastSeen == null ||
+      _now.difference(p.lastSeen!) < presenceTimeout;
 
   /// Players who closed the app without being caught. They are not shown and
   /// never block the round from resolving.
