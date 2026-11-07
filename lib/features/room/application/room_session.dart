@@ -66,7 +66,7 @@ class RoomSession extends Notifier<RoomSessionState> {
   List<RoomPlayer> _players = const [];
   bool _reportedThisRound = false;
 
-  RoomRepository get _repo => ref.read(roomRepositoryProvider);
+  RoomRepo get _repo => ref.read(roomRepositoryProvider);
 
   @override
   RoomSessionState build() {
@@ -231,7 +231,7 @@ class RoomSession extends Notifier<RoomSessionState> {
           game
             ..setStake(room.config.stake, custom: room.config.customStake)
             ..setTarget(room.config.target)
-            ..start();
+            ..start(fromRoom: true);
         }
       case RoomStatus.lobby:
         if (phase != RoundPhase.setup) game.reset();

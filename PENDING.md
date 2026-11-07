@@ -24,7 +24,7 @@ Audited against the source on 2026-11-07, not from memory.
 | 6 | ~~No settings screen~~ **FIXED** | Built: name, siren toggle, Pro status, restore purchases |
 | 7 | ~~Solo rounds always saved as "You"~~ **FIXED** | Name is now set in Settings and used for solo rounds. Home shows "Set your name" in amber until one is saved |
 | 8 | ~~No pack picker~~ **FIXED** | Built in the setup screen as "Talk about…", with padlocks on paid packs |
-| 9 | **Streak has no reminder** | The streak is the only daily-retention mechanic, and nothing reminds anyone. `flutter_local_notifications` is not even a dependency |
+| 9 | ~~Streak has no reminder~~ **FIXED** | A 7:30pm notification, only while a streak is alive and today is unplayed. Toggle in Settings, inexact alarms so no special permission is needed |
 | 10 | **Focus Duel mode not built** | Listed in [CONTEXT.md](CONTEXT.md) as the async mode that gives weekday usage |
 | 11 | ~~Errors invisible in the lobby~~ **FIXED** | A dismissible banner now shows room errors in the lobby and during a round |
 | 12 | ~~Players who quit are never cleaned up~~ **FIXED** | Phones heartbeat `last_seen` every 15s; anyone quiet for 45s drops out of the standings and no longer blocks the round. Needs `supabase/migration_presence.sql` |
@@ -43,7 +43,7 @@ Audited against the source on 2026-11-07, not from memory.
 
 | # | What | Notes |
 |---|---|---|
-| 18 | ~~GameController had no tests~~ **PARTLY FIXED** | 12 controller tests via injectable Detector and Alarm interfaces. `RoomSession` still has none, and there are no widget tests |
+| 18 | ~~Controllers had no tests~~ **FIXED** | 12 GameController + 14 RoomSession tests via injectable Detector, Alarm and RoomRepo interfaces. Widget tests still absent |
 | 19 | **Detection partly verified on hardware** (Realme RMX2030, Android 10, BMI160). Arming, the leave-app catch, the siren and the full round flow all work. **Still untested: physical pick-up, rotation, table-bump false positives** — those need a human moving the phone | See [DEVICE_TEST.md](DEVICE_TEST.md) |
 
 ---

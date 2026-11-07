@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/feedback/alarm_service.dart';
 import '../../../data/remote/analytics_service.dart';
-import '../../room/application/room_session.dart';
 import '../../detector/application/detector_service.dart';
 import '../../detector/domain/detector_models.dart';
+import '../../stats/application/reminder_service.dart';
 import '../../stats/application/stats_providers.dart';
 import '../domain/game_models.dart';
 
@@ -50,8 +50,14 @@ class GameController extends Notifier<GameState> {
 
   // ---- round ----------------------------------------------------------------
 
+  /// True when this round belongs to a table rather than solo play. Passed in
+  /// by the room rather than read from it: the room already listens to this
+  /// controller, and reading back would be a dependency cycle.
+  bool _inRoom = false;
+
   /// Phones go down now. The round arms itself once this phone is still.
-  void start() {
+  void start({bool fromRoom = false}) {
+    _inRoom = fromRoom;
     _teardown();
     _clock
       ..reset()
@@ -73,9 +79,7 @@ class GameController extends Notifier<GameState> {
     _sub = _detector.snapshots.listen(_onDetector);
     _detector.start();
 
-    ref.read(analyticsProvider).roundStarted(
-          inRoom: ref.read(roomSessionProvider).inRoom,
-        );
+    ref.read(analyticsProvider).roundStarted(inRoom: _inRoom);
   }
 
   /// The player gives up rather than sitting it out.
@@ -173,7 +177,7 @@ class GameController extends Notifier<GameState> {
           outcome: result.outcome.name,
           reason: result.reason?.name,
           lastedMs: result.lasted.inMilliseconds,
-          inRoom: ref.read(roomSessionProvider).inRoom,
+          inRoom: _inRoom,
         );
 
     _record(result);
@@ -185,8 +189,12 @@ class GameController extends Notifier<GameState> {
     ref
         .read(roundRecorderProvider)
         .record(config: state.config, result: result)
-        .then((_) {
+        .then((_) async {
       ref.read(statsRevisionProvider.notifier).bump();
+      // The reminder names the streak, so it has to be re-scheduled whenever
+      // the streak changes — which is every time a round is recorded.
+      final streak = await ref.read(streakProvider.future);
+      await ref.read(reminderServiceProvider).refresh(streak);
     }).catchError((_) {});
   }
 

@@ -7,6 +7,7 @@ class PrefsService {
   static const _playerNameKey = 'player_name';
   static const _sirenKey = 'siren_enabled';
   static const _lastRoomKey = 'last_room_code';
+  static const _remindersKey = 'reminders_enabled';
 
   static const defaultPlayerName = 'You';
 
@@ -31,6 +32,18 @@ class PrefsService {
     } else {
       await prefs.setString(_playerNameKey, clean);
     }
+  }
+
+  /// The evening streak nudge. On by default — it is the only thing that
+  /// brings anyone back on a day nobody organised a dinner.
+  Future<bool> remindersEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_remindersKey) ?? true;
+  }
+
+  Future<void> setRemindersEnabled(bool enabled) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_remindersKey, enabled);
   }
 
   /// The table this phone was last at, so a player whose app was killed can
@@ -75,4 +88,8 @@ final hasPlayerNameProvider = FutureProvider<bool>(
 
 final sirenEnabledProvider = FutureProvider<bool>(
   (ref) => ref.watch(prefsServiceProvider).sirenEnabled(),
+);
+
+final remindersEnabledProvider = FutureProvider<bool>(
+  (ref) => ref.watch(prefsServiceProvider).remindersEnabled(),
 );

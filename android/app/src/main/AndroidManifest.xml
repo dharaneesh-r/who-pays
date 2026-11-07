@@ -9,6 +9,11 @@
     <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="false"/>
     <!-- Scanning the host's QR code to join a room -->
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- The streak reminder. Asked for at runtime on Android 13+, and the app
+         works fine if it is declined. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- So a pending reminder survives a restart -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:label="Who Pays?"
@@ -36,6 +41,21 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Delivers scheduled reminders, and re-registers them after a reboot
+             or an app update. Required by flutter_local_notifications. -->
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
         <!-- AdMob. This is Google's public SAMPLE app id: it serves test ads
              only. Replace it with the real id from the AdMob console before
              release — and never test against live ads, which gets the account

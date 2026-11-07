@@ -15,9 +15,36 @@ class RoomUnavailable implements Exception {
   String toString() => message;
 }
 
+/// What a room needs from the server, so tests can supply a fake one.
+abstract interface class RoomRepo {
+  Future<Room> createRoom({
+    required String deviceId,
+    required String name,
+    required GameConfig config,
+  });
+  Future<Room> joinRoom({
+    required String code,
+    required String deviceId,
+    required String name,
+  });
+  Stream<Room?> watchRoom(String code);
+  Stream<List<RoomPlayer>> watchPlayers(String code);
+  Future<void> touch({required String code, required String deviceId});
+  Future<bool> roomExists(String code);
+  Future<void> setStatus(String code, RoomStatus status);
+  Future<void> resetRound(String code);
+  Future<void> reportCaught({
+    required String code,
+    required String deviceId,
+    required Duration lasted,
+    required CatchReason reason,
+  });
+  Future<void> leaveRoom({required String code, required String deviceId});
+}
+
 /// Everything the server does for this game: hold a room, list who is in it,
 /// and record who was caught when. The rules all run on the phones.
-class RoomRepository {
+class RoomRepository implements RoomRepo {
   static const _codeAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I or O
   static const _codeLength = 4;
   static const _maxCodeAttempts = 8;
@@ -40,6 +67,7 @@ class RoomRepository {
   ///
   /// Codes are short enough to read aloud across a table, which means
   /// collisions are possible — so insert, and on a clash try another code.
+  @override
   Future<Room> createRoom({
     required String deviceId,
     required String name,
@@ -68,6 +96,7 @@ class RoomRepository {
   }
 
   /// Joins, or rejoins after the app was killed — the same device keeps its row.
+  @override
   Future<Room> joinRoom({
     required String code,
     required String deviceId,
@@ -88,6 +117,7 @@ class RoomRepository {
     return Room.fromRow(rows.first);
   }
 
+  @override
   Stream<Room?> watchRoom(String code) {
     return _db
         .from('rooms')
@@ -96,6 +126,7 @@ class RoomRepository {
         .map((rows) => rows.isEmpty ? null : Room.fromRow(rows.first));
   }
 
+  @override
   Stream<List<RoomPlayer>> watchPlayers(String code) {
     return _db
         .from('room_players')
@@ -106,6 +137,7 @@ class RoomRepository {
 
   /// "I am still here." Sent on a timer while in a room; a phone that stops
   /// sending it is treated as having left the table.
+  @override
   Future<void> touch({
     required String code,
     required String deviceId,
@@ -119,6 +151,7 @@ class RoomRepository {
 
   /// Does this room still exist? Used to decide whether a saved code is worth
   /// offering as a rejoin.
+  @override
   Future<bool> roomExists(String code) async {
     try {
       final rows = await _db.from('rooms').select('code').eq('code', code).limit(1);
@@ -129,6 +162,7 @@ class RoomRepository {
   }
 
   /// Host only: moves everyone to the next phase.
+  @override
   Future<void> setStatus(String code, RoomStatus status) async {
     await _db.from('rooms').update({
       'status': status.name,
@@ -138,6 +172,7 @@ class RoomRepository {
   }
 
   /// Clears every player's catch so the same table can play again.
+  @override
   Future<void> resetRound(String code) async {
     await _db.from('room_players').update({
       'caught_at': null,
@@ -148,6 +183,7 @@ class RoomRepository {
 
   /// This phone was caught. Written once — a later report must never overwrite
   /// an earlier one, or the loser could change after the fact.
+  @override
   Future<void> reportCaught({
     required String code,
     required String deviceId,
@@ -166,6 +202,7 @@ class RoomRepository {
         .isFilter('caught_at', null);
   }
 
+  @override
   Future<void> leaveRoom({
     required String code,
     required String deviceId,
@@ -178,4 +215,4 @@ class RoomRepository {
   }
 }
 
-final roomRepositoryProvider = Provider<RoomRepository>((_) => RoomRepository());
+final roomRepositoryProvider = Provider<RoomRepo>((_) => RoomRepository());
