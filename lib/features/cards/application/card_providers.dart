@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../data/remote/analytics_service.dart';
 import '../../paywall/application/purchase_service.dart';
 import '../domain/card_pack.dart';
 
@@ -32,7 +33,10 @@ class SelectedPack extends Notifier<String?> {
   @override
   String? build() => null;
 
-  void select(String? id) => state = id;
+  void select(String? id) {
+    state = id;
+    if (id != null) ref.read(analyticsProvider).packSelected(id);
+  }
 }
 
 final selectedPackProvider =

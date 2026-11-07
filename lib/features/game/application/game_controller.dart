@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/feedback/alarm_service.dart';
+import '../../../data/remote/analytics_service.dart';
+import '../../room/application/room_session.dart';
 import '../../detector/application/detector_service.dart';
 import '../../detector/domain/detector_models.dart';
 import '../../stats/application/stats_providers.dart';
@@ -70,6 +72,10 @@ class GameController extends Notifier<GameState> {
 
     _sub = _detector.snapshots.listen(_onDetector);
     _detector.start();
+
+    ref.read(analyticsProvider).roundStarted(
+          inRoom: ref.read(roomSessionProvider).inRoom,
+        );
   }
 
   /// The player gives up rather than sitting it out.
@@ -162,6 +168,13 @@ class GameController extends Notifier<GameState> {
       elapsed: result.lasted,
       result: result,
     );
+
+    ref.read(analyticsProvider).roundFinished(
+          outcome: result.outcome.name,
+          reason: result.reason?.name,
+          lastedMs: result.lasted.inMilliseconds,
+          inRoom: ref.read(roomSessionProvider).inRoom,
+        );
 
     _record(result);
   }

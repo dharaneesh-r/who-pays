@@ -1,3 +1,5 @@
+import '../../../core/config/monetisation.dart';
+
 /// What the player has paid for.
 ///
 /// Deliberately one-time purchases, never a subscription: nobody subscribes to
@@ -42,22 +44,31 @@ class Entitlements {
   /// Pro includes every pack, so pack ownership is never checked separately
   /// for a Pro user — a bug there would be an immediate refund request.
   bool hasPack(String packId) {
+    // Ads-only launch: every pack is free.
+    if (!Monetisation.proEnabled) return true;
     if (isPro) return true;
     final product = ProductIds.packProducts[packId];
     return product == null || owned.contains(product);
   }
 
-  bool get adsRemoved => isPro;
+  /// Custom stakes are a Pro feature only while Pro exists.
+  bool get canUseCustomStake => !Monetisation.proEnabled || isPro;
+
+  /// On an ads-only launch nobody can remove the ads — they are the revenue.
+  bool get adsRemoved => Monetisation.proEnabled && isPro;
 
   /// Free players get a few rounds a day. Enough to fall in love with it,
   /// few enough that a group playing every week has a reason to buy.
   static const freeRoundsPerDay = 3;
 
   bool canPlay({required int roundsToday}) =>
-      isPro || roundsToday < freeRoundsPerDay;
+      !Monetisation.proEnabled || isPro || roundsToday < freeRoundsPerDay;
 
+  /// -1 means unlimited.
   int roundsLeft({required int roundsToday}) =>
-      isPro ? -1 : (freeRoundsPerDay - roundsToday).clamp(0, freeRoundsPerDay);
+      (!Monetisation.proEnabled || isPro)
+          ? -1
+          : (freeRoundsPerDay - roundsToday).clamp(0, freeRoundsPerDay);
 
   Entitlements withPurchase(String productId) {
     if (!ProductIds.all.contains(productId)) return this;

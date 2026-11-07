@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/local/device_identity.dart';
 import '../../../data/local/prefs_service.dart';
+import '../../../data/remote/analytics_service.dart';
 import '../../../data/remote/room_repository.dart';
 import '../../detector/domain/detector_models.dart';
 import '../../game/application/game_controller.dart';
@@ -86,6 +87,7 @@ class RoomSession extends Notifier<RoomSessionState> {
         config: config,
       );
       _attach(room.code, deviceId);
+      ref.read(analyticsProvider).roomCreated();
     } catch (e) {
       state = state.copyWith(joining: false, error: _message(e));
     }
@@ -103,6 +105,7 @@ class RoomSession extends Notifier<RoomSessionState> {
       final deviceId = await _deviceId();
       await _repo.joinRoom(code: code, deviceId: deviceId, name: await _name());
       _attach(code, deviceId);
+      ref.read(analyticsProvider).roomJoined();
     } catch (e) {
       state = state.copyWith(joining: false, error: _message(e));
     }

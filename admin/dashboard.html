@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who Pays? — Admin</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0E0E12; --surface:#17171E; --line:#24242E;
+    --fg:#F3F3F5; --muted:#8A8A96;
+    --accent:#FFB300; --safe:#3DD68C; --danger:#E5392F; --info:#5AA9FF;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.5 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:28px max(16px,env(safe-area-inset-right,0)) 60px max(16px,env(safe-area-inset-left,0));
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+  h1{font-size:26px;margin:0;letter-spacing:-.3px}
+  h2{font-size:14px;text-transform:uppercase;letter-spacing:1.6px;color:var(--muted);margin:34px 0 12px;font-weight:600}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 4px}
+  button{
+    background:var(--surface);color:var(--fg);border:1px solid var(--line);
+    border-radius:10px;padding:9px 16px;font:inherit;font-size:13px;cursor:pointer;
+  }
+  button:hover{border-color:var(--accent);color:var(--accent)}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .tile .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1.1px}
+  .tile .v{font-size:30px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
+  .tile .n{color:var(--muted);font-size:12px;margin-top:2px}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
+     text-transform:uppercase;letter-spacing:1px;padding:0 0 8px}
+  td{padding:9px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+  td.num,th.num{text-align:right}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+  .ok{background:rgba(61,214,140,.15);color:var(--safe)}
+  .bad{background:rgba(229,57,47,.15);color:var(--danger)}
+  .warn{background:rgba(255,179,0,.15);color:var(--accent)}
+  .empty{color:var(--muted);padding:18px 0;font-size:14px}
+  .err{background:rgba(229,57,47,.1);border:1px solid var(--danger);color:#ffb4ae;
+       padding:14px 16px;border-radius:12px;margin:16px 0;font-size:14px}
+  .note{color:var(--muted);font-size:13px;line-height:1.6;margin-top:10px}
+  canvas{max-width:100%}
+  code{background:#0a0a0e;padding:2px 6px;border-radius:5px;font-size:12.5px}
+  .scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Who Pays? — Admin</h1>
+      <p class="sub" id="updated">Loading…</p>
+    </div>
+    <div>
+      <button id="refresh">Refresh</button>
+    </div>
+  </header>
+
+  <div id="error"></div>
+
+  <h2>Reach</h2>
+  <div class="tiles" id="tiles"></div>
+  <p class="note">
+    <strong>Devices</strong> counts distinct phones that opened the app and reached the
+    network. It is the closest the app itself can get to an install count —
+    Play Console remains the real source, because it also sees installs that
+    never opened and opens that happened offline.
+  </p>
+
+  <h2>Activity by day</h2>
+  <div class="panel"><canvas id="chart" height="110"></canvas></div>
+
+  <div class="grid2" style="margin-top:14px">
+    <div class="panel">
+      <h2 style="margin-top:0">Why people got caught</h2>
+      <div class="scroll"><table id="reasons"></table></div>
+      <p class="note">
+        This is the detection health check. A spike in <code>motion</code> with a
+        very low average time means false positives — the thresholds in
+        <code>detection_config.dart</code> are too sensitive.
+      </p>
+    </div>
+    <div class="panel">
+      <h2 style="margin-top:0">Table Talk packs</h2>
+      <div class="scroll"><table id="packs"></table></div>
+      <p class="note">Which packs people actually choose.</p>
+    </div>
+  </div>
+
+  <h2>Did they come back?</h2>
+  <div class="panel scroll"><table id="retention"></table></div>
+  <p class="note">
+    Of the devices first seen on a day, how many opened the app again on a later
+    day. This is the number that decides whether the app has a future.
+  </p>
+
+  <h2>Live tables</h2>
+  <div class="panel scroll"><table id="rooms"></table></div>
+
+  <p class="note" style="margin-top:34px">
+    Ad revenue, impressions and eCPM live in the <strong>AdMob console</strong>.
+    Installs, uninstalls, ratings and crashes live in <strong>Play Console</strong>.
+    Neither can be read from here, so this page covers only what the app itself
+    reports.
+  </p>
+</div>
+
+<script>
+const URL_BASE = 'https://uhslpvssmpmhtmlmncxo.supabase.co';
+const KEY = 'sb_publishable_3oYIMsneJAbIFvDUP7N_Bw_xqxo-UIn';
+
+const headers = { apikey: KEY, Authorization: 'Bearer ' + KEY };
+const $ = (id) => document.getElementById(id);
+
+async function get(path) {
+  const res = await fetch(`${URL_BASE}/rest/v1/${path}`, { headers });
+  if (!res.ok) throw new Error(`${path} → ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+const n = (v) => (v ?? 0).toLocaleString();
+
+function tiles(t) {
+  const items = [
+    ['Devices', n(t.total_devices), 'all time'],
+    ['Active today', n(t.devices_today), ''],
+    ['Active 7 days', n(t.devices_7d), ''],
+    ['Active 30 days', n(t.devices_30d), ''],
+    ['Rounds played', n(t.rounds_all_time), 'all time'],
+    ['Ads shown', n(t.ads_all_time), 'all time'],
+    ['Results shared', n(t.shares_all_time), 'the growth loop'],
+  ];
+  $('tiles').innerHTML = items.map(([k, v, note]) => `
+    <div class="tile"><div class="k">${k}</div><div class="v">${v}</div>
+    ${note ? `<div class="n">${note}</div>` : ''}</div>`).join('');
+}
+
+let chart;
+function drawChart(rows) {
+  const days = rows.slice(0, 30).reverse();
+  const labels = days.map(r => r.day.slice(5));
+  const css = getComputedStyle(document.documentElement);
+  const grid = css.getPropertyValue('--line').trim();
+  const muted = css.getPropertyValue('--muted').trim();
+
+  const series = [
+    ['Active devices', 'active_devices', css.getPropertyValue('--info').trim()],
+    ['Rounds finished', 'rounds_finished', css.getPropertyValue('--accent').trim()],
+    ['New devices', 'new_devices', css.getPropertyValue('--safe').trim()],
+  ];
+
+  if (chart) chart.destroy();
+  chart = new Chart($('chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: series.map(([label, key, color]) => ({
+        label, data: days.map(r => r[key] ?? 0),
+        borderColor: color, backgroundColor: color + '22',
+        tension: .3, fill: true, pointRadius: 2, borderWidth: 2,
+      })),
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: muted, boxWidth: 12 } } },
+      scales: {
+        x: { ticks: { color: muted }, grid: { color: grid } },
+        y: { beginAtZero: true, ticks: { color: muted, precision: 0 }, grid: { color: grid } },
+      },
+    },
+  });
+}
+
+function table(el, cols, rows, emptyMsg) {
+  if (!rows.length) { el.innerHTML = `<tr><td class="empty">${emptyMsg}</td></tr>`; return; }
+  el.innerHTML =
+    '<thead><tr>' + cols.map(c => `<th class="${c.num ? 'num' : ''}">${c.label}</th>`).join('') + '</tr></thead>' +
+    '<tbody>' + rows.map(r =>
+      '<tr>' + cols.map(c => `<td class="${c.num ? 'num' : ''}">${c.render(r)}</td>`).join('') + '</tr>'
+    ).join('') + '</tbody>';
+}
+
+function reasonPill(reason) {
+  const cls = reason === 'motion' || reason === 'rotation' ? 'bad'
+            : reason === 'conceded' ? 'warn' : 'ok';
+  return `<span class="pill ${cls}">${reason}</span>`;
+}
+
+async function load() {
+  $('error').innerHTML = '';
+  try {
+    const [totals, daily, reasons, packs, retention, rooms] = await Promise.all([
+      get('stats_totals?select=*'),
+      get('stats_daily?select=*&order=day.desc&limit=30'),
+      get('stats_catch_reasons?select=*'),
+      get('stats_packs?select=*'),
+      get('stats_retention?select=*&order=cohort_day.desc&limit=14'),
+      get('rooms?select=code,status,created_at&order=created_at.desc&limit=20'),
+    ]);
+
+    tiles(totals[0] ?? {});
+    drawChart(daily);
+
+    table($('reasons'),
+      [
+        { label: 'Reason', render: r => reasonPill(r.reason ?? '—') },
+        { label: 'Times', num: true, render: r => n(r.hits) },
+        { label: 'Avg length', num: true, render: r => (r.avg_seconds ?? 0) + 's' },
+      ], reasons, 'No finished rounds yet.');
+
+    table($('packs'),
+      [
+        { label: 'Pack', render: r => r.pack },
+        { label: 'Picks', num: true, render: r => n(r.picks) },
+      ], packs, 'Nobody has changed pack yet.');
+
+    table($('retention'),
+      [
+        { label: 'First seen', render: r => r.cohort_day },
+        { label: 'New devices', num: true, render: r => n(r.new_devices) },
+        { label: 'Came back', num: true, render: r => n(r.returned_later) },
+        {
+          label: 'Rate', num: true, render: r => {
+            if (!r.new_devices) return '—';
+            const pct = Math.round((r.returned_later / r.new_devices) * 100);
+            const cls = pct >= 30 ? 'ok' : pct >= 15 ? 'warn' : 'bad';
+            return `<span class="pill ${cls}">${pct}%</span>`;
+          }
+        },
+      ], retention, 'No cohorts yet.');
+
+    table($('rooms'),
+      [
+        { label: 'Code', render: r => `<strong>${r.code}</strong>` },
+        { label: 'Status', render: r => `<span class="pill ${r.status === 'finished' ? 'ok' : 'warn'}">${r.status}</span>` },
+        { label: 'Created', render: r => new Date(r.created_at).toLocaleString() },
+      ], rooms, 'No tables right now. Rooms are purged after a day.');
+
+    $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch (e) {
+    $('error').innerHTML = `<div class="err"><strong>Could not load.</strong> ${e.message}
+      <br><br>If this says <code>42P01</code> the analytics tables are missing —
+      run <code>supabase/analytics.sql</code> in the Supabase SQL editor.</div>`;
+    $('updated').textContent = 'Failed to load';
+  }
+}
+
+$('refresh').addEventListener('click', load);
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

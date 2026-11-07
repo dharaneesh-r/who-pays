@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../../../data/remote/analytics_service.dart';
 import 'purchase_service.dart';
 
 /// Interstitial on the result screen only.
@@ -95,6 +96,7 @@ class AdsService {
 
     try {
       await ad.show();
+      _ref.read(analyticsProvider).adShown();
     } catch (_) {
       finish(ad);
     }

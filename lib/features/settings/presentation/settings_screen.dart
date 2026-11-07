@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/monetisation.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/local/prefs_service.dart';
 import '../../paywall/application/purchase_service.dart';
@@ -87,6 +88,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               style: const TextStyle(color: Colors.white38, fontSize: 13),
             ),
           ),
+          // Nothing to sell on an ads-only launch, so the whole section goes.
+          if (!Monetisation.proEnabled) ...[
+            const SizedBox(height: 20),
+            Text(
+              'Everything is unlocked and free. The app is paid for by a '
+              'single ad after a round.',
+              style: text.bodyMedium?.copyWith(color: Colors.white38, fontSize: 13),
+            ),
+          ] else ...[
           const Divider(height: 36),
           Text('Pro', style: text.titleMedium),
           const SizedBox(height: 8),
@@ -129,6 +139,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             'phone. Purchases only work on a build installed from Google Play.',
             style: text.bodyMedium?.copyWith(color: Colors.white38, fontSize: 13),
           ),
+          ],
           const SizedBox(height: 32),
         ],
       ),

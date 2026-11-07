@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../paywall/application/ads_service.dart';
 import '../../room/application/room_session.dart';
 import '../../room/presentation/live_standings.dart';
+import '../../../data/remote/analytics_service.dart';
 import '../../share/application/share_service.dart';
 import '../../detector/domain/detector_models.dart';
 import '../application/game_controller.dart';
@@ -131,12 +132,15 @@ class ResultView extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: result == null
                 ? null
-                : () => ref.read(shareServiceProvider).shareResult(
+                : () {
+                    ref.read(analyticsProvider).resultShared();
+                    ref.read(shareServiceProvider).shareResult(
                       config: state.config,
                       result: result,
                       loserName: loserName,
                       standings: session.snapshot?.standings ?? const [],
-                    ),
+                    );
+                  },
             icon: const Icon(Icons.ios_share),
             label: const Text('SHARE THE DAMAGE'),
           ),

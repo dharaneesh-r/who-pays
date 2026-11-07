@@ -1,74 +1,82 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:who_pays/core/config/monetisation.dart';
 import 'package:who_pays/features/paywall/domain/entitlements.dart';
 
 void main() {
-  group('a free player', () {
-    const free = Entitlements.none;
+  tearDown(() => Monetisation.mode = MonetisationMode.adsOnly);
 
-    test('is not pro and still sees ads', () {
-      expect(free.isPro, isFalse);
-      expect(free.adsRemoved, isFalse);
+  group('ads-only launch (how the app ships today)', () {
+    setUp(() => Monetisation.mode = MonetisationMode.adsOnly);
+
+    const player = Entitlements.none;
+
+    test('rounds are unlimited — there is no paywall to hit', () {
+      expect(player.canPlay(roundsToday: 0), isTrue);
+      expect(player.canPlay(roundsToday: 500), isTrue);
+      expect(player.roundsLeft(roundsToday: 500), -1);
     });
 
-    test('gets the free rounds, then is asked to pay', () {
+    test('every pack is unlocked', () {
+      for (final packId in ProductIds.packProducts.keys) {
+        expect(player.hasPack(packId), isTrue, reason: '$packId must be free');
+      }
+      expect(player.hasPack('friends'), isTrue);
+    });
+
+    test('custom stakes are available to everyone', () {
+      expect(player.canUseCustomStake, isTrue);
+    });
+
+    test('ads are always shown — they are the only revenue', () {
+      expect(player.adsRemoved, isFalse);
+      // Even a leftover Pro entitlement from a previous build cannot remove
+      // ads while the app is in ads-only mode.
+      final legacyPro = Entitlements.none.withPurchase(ProductIds.pro);
+      expect(legacyPro.adsRemoved, isFalse);
+    });
+  });
+
+  group('with Pro switched back on', () {
+    setUp(() => Monetisation.mode = MonetisationMode.adsAndPro);
+
+    test('a free player gets the daily allowance, then is asked to pay', () {
+      const free = Entitlements.none;
       expect(free.canPlay(roundsToday: 0), isTrue);
       expect(free.canPlay(roundsToday: 2), isTrue);
       expect(free.canPlay(roundsToday: 3), isFalse);
-      expect(free.canPlay(roundsToday: 99), isFalse);
-    });
-
-    test('reports how many rounds are left, never a negative', () {
-      expect(free.roundsLeft(roundsToday: 0), 3);
       expect(free.roundsLeft(roundsToday: 2), 1);
-      expect(free.roundsLeft(roundsToday: 3), 0);
       expect(free.roundsLeft(roundsToday: 10), 0);
     });
 
-    test('has the free packs but not the paid ones', () {
-      expect(free.hasPack('friends'), isTrue,
-          reason: 'a pack with no product attached is free');
-      expect(free.hasPack('family'), isTrue);
+    test('a free player has the free packs but not the paid ones', () {
+      const free = Entitlements.none;
+      expect(free.hasPack('friends'), isTrue);
       expect(free.hasPack('couples'), isFalse);
-      expect(free.hasPack('desi'), isFalse);
+      expect(free.canUseCustomStake, isFalse);
     });
-  });
 
-  group('a pro player', () {
-    final pro = Entitlements.none.withPurchase(ProductIds.pro);
-
-    test('has unlimited rounds', () {
+    test('pro unlocks everything and removes ads', () {
+      final pro = Entitlements.none.withPurchase(ProductIds.pro);
       expect(pro.canPlay(roundsToday: 1000), isTrue);
-      expect(pro.roundsLeft(roundsToday: 1000), -1);
-    });
-
-    test('has no ads', () => expect(pro.adsRemoved, isTrue));
-
-    test('gets every pack without buying them individually', () {
+      expect(pro.adsRemoved, isTrue);
+      expect(pro.canUseCustomStake, isTrue);
       for (final packId in ProductIds.packProducts.keys) {
-        expect(pro.hasPack(packId), isTrue, reason: 'pro must include $packId');
+        expect(pro.hasPack(packId), isTrue);
       }
     });
-  });
 
-  group('buying a single pack', () {
-    final buyer = Entitlements.none.withPurchase(ProductIds.packCouples);
-
-    test('unlocks only that pack', () {
+    test('buying one pack unlocks only that pack', () {
+      final buyer = Entitlements.none.withPurchase(ProductIds.packCouples);
       expect(buyer.hasPack('couples'), isTrue);
       expect(buyer.hasPack('team'), isFalse);
-    });
-
-    test('does not make them pro', () {
       expect(buyer.isPro, isFalse);
       expect(buyer.adsRemoved, isFalse);
-      expect(buyer.canPlay(roundsToday: 3), isFalse);
     });
   });
 
   group('purchase bookkeeping', () {
     test('ignores an unknown product id', () {
-      final result = Entitlements.none.withPurchase('not_a_real_product');
-      expect(result.owned, isEmpty);
+      expect(Entitlements.none.withPurchase('not_real').owned, isEmpty);
     });
 
     test('buying twice does not duplicate', () {
@@ -79,6 +87,7 @@ void main() {
     });
 
     test('a refund revokes the entitlement', () {
+      Monetisation.mode = MonetisationMode.adsAndPro;
       final refunded = Entitlements.none
           .withPurchase(ProductIds.pro)
           .withRevocation(ProductIds.pro);
@@ -87,10 +96,7 @@ void main() {
     });
 
     test('revoking something never owned is harmless', () {
-      expect(
-        Entitlements.none.withRevocation(ProductIds.pro).owned,
-        isEmpty,
-      );
+      expect(Entitlements.none.withRevocation(ProductIds.pro).owned, isEmpty);
     });
   });
 }

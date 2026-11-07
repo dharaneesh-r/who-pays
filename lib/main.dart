@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 
 import 'app.dart';
+import 'data/remote/analytics_service.dart';
 import 'data/remote/supabase_init.dart';
 import 'features/paywall/application/ads_service.dart';
 
@@ -23,6 +24,7 @@ Future<void> main() async {
   final container = ProviderContainer();
   // Warm the ad up front so the first result screen is not the one that waits.
   unawaited(container.read(adsServiceProvider).init());
+  unawaited(container.read(analyticsProvider).appOpened());
 
   runApp(
     UncontrolledProviderScope(

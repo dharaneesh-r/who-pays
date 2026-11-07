@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/config/monetisation.dart';
 import '../domain/entitlements.dart';
 
 /// Buying, restoring and remembering what the player owns.
@@ -22,6 +23,9 @@ class PurchaseService extends AsyncNotifier<Entitlements> {
   @override
   Future<Entitlements> build() async {
     ref.onDispose(() => _sub?.cancel());
+
+    // Ads-only launch: nothing to buy, so never touch the billing client.
+    if (!Monetisation.purchasesEnabled) return Entitlements.none;
 
     final cached = await _loadCached();
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:who_pays/core/config/monetisation.dart';
 import 'package:who_pays/features/cards/domain/card_pack.dart';
 import 'package:who_pays/features/paywall/domain/entitlements.dart';
 
@@ -56,7 +57,10 @@ void main() {
     expect(free, {'friends', 'family'});
   });
 
-  test('paid packs are not reachable without owning them', () {
+  test('paid packs lock correctly once Pro is switched back on', () {
+    Monetisation.mode = MonetisationMode.adsAndPro;
+    addTearDown(() => Monetisation.mode = MonetisationMode.adsOnly);
+
     const nothingOwned = Entitlements.none;
     for (final packId in ProductIds.packProducts.keys) {
       expect(nothingOwned.hasPack(packId), isFalse,
@@ -66,6 +70,12 @@ void main() {
     final pro = Entitlements.none.withPurchase(ProductIds.pro);
     for (final packId in ProductIds.packProducts.keys) {
       expect(pro.hasPack(packId), isTrue);
+    }
+  });
+
+  test('every pack is free while the app is ads-only', () {
+    for (final packId in ProductIds.packProducts.keys) {
+      expect(Entitlements.none.hasPack(packId), isTrue);
     }
   });
 

@@ -60,7 +60,7 @@ class _SetupViewState extends ConsumerState<SetupView> {
   Widget build(BuildContext context) {
     final state = ref.watch(gameControllerProvider);
     final controller = ref.read(gameControllerProvider.notifier);
-    final isPro = ref.watch(entitlementsProvider).isPro;
+    final canCustomise = ref.watch(entitlementsProvider).canUseCustomStake;
     final text = Theme.of(context).textTheme;
 
     return Column(
@@ -86,11 +86,11 @@ class _SetupViewState extends ConsumerState<SetupView> {
                   // locked rather than missing — otherwise the paywall would
                   // be advertising something invisible.
                   ChoiceChip(
-                    avatar: isPro ? null : const Icon(Icons.lock, size: 16),
+                    avatar: canCustomise ? null : const Icon(Icons.lock, size: 16),
                     label: const Text('something else'),
                     selected: state.config.stake == Stake.custom,
                     onSelected: (_) {
-                      if (!isPro) {
+                      if (!canCustomise) {
                         PaywallSheet.show(context,
                             reason: PaywallReason.customStake);
                         return;
