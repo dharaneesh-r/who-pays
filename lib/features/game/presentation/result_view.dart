@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -55,11 +56,28 @@ class ResultView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Spacer(),
+          // Motion used sparingly and only where it means something: the
+          // headline is the moment the table turns on the loser, so it hits
+          // hard. Surviving gets a calmer entrance.
           Text(
             caught ? 'CAUGHT' : 'YOU MADE IT',
             textAlign: TextAlign.center,
-            style: text.displayLarge?.copyWith(fontSize: 56, color: color),
-          ),
+            style: text.displayMedium?.copyWith(fontSize: 58, color: color),
+          )
+              .animate()
+              .fadeIn(duration: 160.ms)
+              .scale(
+                begin: const Offset(0.82, 0.82),
+                end: const Offset(1, 1),
+                duration: 260.ms,
+                curve: Curves.easeOutBack,
+              )
+              .then()
+              .shake(
+                hz: caught ? 7 : 0,
+                offset: const Offset(5, 0),
+                duration: caught ? 420.ms : 0.ms,
+              ),
           const SizedBox(height: 16),
           if (caught)
             Text(

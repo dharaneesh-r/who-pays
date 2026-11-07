@@ -39,7 +39,7 @@ class HomeScreen extends ConsumerWidget {
               // than removed, so it never confuses an ordinary player.
               GestureDetector(
                 onLongPress: () => context.push(DetectorDebugScreen.path),
-                child: Text('WHO\nPAYS?', style: text.displayLarge),
+                child: Text('WHO\nPAYS?', style: text.displayMedium),
               ),
               const SizedBox(height: 12),
               Text(
