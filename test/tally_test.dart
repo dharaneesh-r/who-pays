@@ -105,6 +105,15 @@ void main() {
           isNull);
     });
 
+    test('conjugates for the fallback name, which is a pronoun', () {
+      // "You has cracked first" is how this read before.
+      final tallies = buildTallies([
+        a('You', seconds: 10, first: true),
+        a('You', seconds: 10, first: true),
+      ]);
+      expect(headline(tallies), 'You have cracked first 2 times');
+    });
+
     test('names the worst offender once there is a pattern', () {
       final tallies = buildTallies([
         a('Ramesh', seconds: 10, first: true),

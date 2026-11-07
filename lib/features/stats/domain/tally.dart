@@ -80,8 +80,11 @@ String? headline(List<PlayerTally> tallies) {
   if (tallies.isEmpty) return null;
   final worst = tallies.first;
   if (worst.firstCracks < 2) return null;
-  return '${worst.name} has cracked first '
-      '${worst.firstCracks} times';
+
+  // "You" is the fallback name for a player who never set one, and it is a
+  // pronoun — "You has cracked first" reads as broken English.
+  final verb = worst.name == 'You' ? 'have' : 'has';
+  return '${worst.name} $verb cracked first ${worst.firstCracks} times';
 }
 
 /// Keeps only appearances inside the trailing window, so the leaderboard
