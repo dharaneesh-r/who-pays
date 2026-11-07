@@ -59,6 +59,17 @@ class FakeRoomRepo implements RoomRepo {
   @override
   Stream<List<RoomPlayer>> watchPlayers(String code) => people.stream;
 
+  /// Device ids "connected" to the realtime channel. Tests push sets into it
+  /// to simulate somebody closing their app.
+  final presence = StreamController<Set<String>>.broadcast();
+
+  @override
+  Stream<Set<String>> watchPresence({
+    required String code,
+    required String deviceId,
+  }) =>
+      presence.stream;
+
   @override
   Future<void> touch({required String code, required String deviceId}) async =>
       touches++;
@@ -90,6 +101,7 @@ class FakeRoomRepo implements RoomRepo {
       leaves++;
 
   void dispose() {
+    presence.close();
     rooms.close();
     people.close();
   }
@@ -390,6 +402,70 @@ void main() {
 
       expect(game().phase, RoundPhase.setup,
           reason: 'nothing was running, so there is nothing to end');
+    });
+  });
+
+  /// Realtime presence, which is the only way to notice someone leaving on a
+  /// database without the presence column.
+  ///
+  /// The guard matters more than the feature: if this phone cannot see itself
+  /// on the channel, the socket is down and the empty set must not be read as
+  /// "everybody left".
+  group('socket presence', () {
+    setUp(() => RoomSession.offlineGrace = Duration.zero);
+    tearDown(() => RoomSession.offlineGrace = const Duration(seconds: 30));
+
+    Future<void> twoAtTheTable() async {
+      await joinAsGuest();
+      expect(session().deviceId, isNotNull,
+          reason: 'precondition: the session knows which phone it is');
+      repo.rooms.add(repo.room(RoomStatus.lobby));
+      repo.people.add([
+        person('Me', device: session().deviceId!),
+        person('Other', device: 'other-device'),
+      ]);
+      await settle();
+    }
+
+    test('a phone that drops off the channel stops blocking the round',
+        () async {
+      await twoAtTheTable();
+      repo.presence.add({session().deviceId!, 'other-device'});
+      await settle();
+      expect(session().snapshot!.stillIn, hasLength(2));
+
+      repo.presence.add({session().deviceId!}); // they closed the app
+      await settle();
+
+      expect(session().snapshot!.stillIn.map((p) => p.name), ['Me']);
+      expect(session().snapshot!.isDecided, isTrue);
+    });
+
+    test('a dead socket does not eject the whole table', () async {
+      await twoAtTheTable();
+      repo.presence.add({session().deviceId!, 'other-device'});
+      await settle();
+
+      repo.presence.add(const {}); // cannot even see ourselves
+      await settle();
+
+      expect(session().snapshot!.stillIn, hasLength(2),
+          reason: 'no information is not the same as everybody leaving');
+      expect(session().snapshot!.isDecided, isFalse);
+    });
+
+    test('someone who comes back is not still counted as gone', () async {
+      await twoAtTheTable();
+      repo.presence.add({session().deviceId!, 'other-device'});
+      await settle();
+      repo.presence.add({session().deviceId!});
+      await settle();
+      expect(session().snapshot!.stillIn, hasLength(1));
+
+      repo.presence.add({session().deviceId!, 'other-device'}); // reconnected
+      await settle();
+
+      expect(session().snapshot!.stillIn, hasLength(2));
     });
   });
 }

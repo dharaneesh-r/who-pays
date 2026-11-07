@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/local/device_identity.dart';
@@ -64,6 +65,19 @@ class RoomSession extends Notifier<RoomSessionState> {
 
   Room? _room;
   List<RoomPlayer> _players = const [];
+
+  /// Device ids currently on the realtime channel, and when each one that is
+  /// missing was last seen there.
+  Set<String> _online = const {};
+  final Map<String, DateTime> _offlineSince = {};
+  StreamSubscription<Set<String>>? _presenceSub;
+
+  /// How long a phone must stay off the channel before the table gives up on
+  /// it. Realtime reconnects after a tunnel or a wifi handover, and ejecting
+  /// somebody who is sitting right there is far worse than a slow round.
+  /// Not const so tests can collapse it; nothing else should change it.
+  @visibleForTesting
+  static Duration offlineGrace = const Duration(seconds: 30);
   bool _reportedThisRound = false;
 
   RoomRepo get _repo => ref.read(roomRepositoryProvider);
@@ -198,6 +212,26 @@ class RoomSession extends Notifier<RoomSessionState> {
       onError: (Object e) => state = state.copyWith(error: _message(e)),
     );
 
+    _presenceSub = _repo
+        .watchPresence(code: code, deviceId: deviceId)
+        .listen((online) {
+      _online = online;
+      final now = DateTime.now();
+      for (final id in online) {
+        _offlineSince.remove(id);
+      }
+      // Only start the clock on people we have actually seen connected, and
+      // only while presence is working at all.
+      if (_presenceWorks(deviceId)) {
+        for (final p in _players) {
+          if (!online.contains(p.deviceId)) {
+            _offlineSince.putIfAbsent(p.deviceId, () => now);
+          }
+        }
+      }
+      _publish();
+    }, onError: (Object _) {/* presence is a bonus, never a requirement */});
+
     _playersSub = _repo.watchPlayers(code).listen(
       (players) {
         _players = players;
@@ -296,10 +330,29 @@ class RoomSession extends Notifier<RoomSessionState> {
     }
   }
 
+  /// Presence is only believable if this phone can see itself on the channel.
+  /// Otherwise the socket is down and the empty set means nothing.
+  bool _presenceWorks(String? deviceId) =>
+      deviceId != null && _online.contains(deviceId);
+
+  /// Who has been off the channel long enough to count as gone.
+  Set<String> get _confirmedGone {
+    if (!_presenceWorks(state.deviceId)) return const {};
+    final now = DateTime.now();
+    return _offlineSince.entries
+        .where((e) => now.difference(e.value) >= offlineGrace)
+        .map((e) => e.key)
+        .toSet();
+  }
+
   void _publish() {
     final room = _room;
     if (room == null) return;
-    final snapshot = RoomSnapshot(room: room, players: _players);
+    final snapshot = RoomSnapshot(
+      room: room,
+      players: _players,
+      confirmedGone: _confirmedGone,
+    );
     state = state.copyWith(snapshot: snapshot, joining: false);
     _closeRoundIfDecided(snapshot);
 
@@ -309,13 +362,21 @@ class RoomSession extends Notifier<RoomSessionState> {
       final current = state.snapshot;
       if (current == null) return;
       state = state.copyWith(
-        snapshot: RoomSnapshot(room: current.room, players: current.players),
+        snapshot: RoomSnapshot(
+          room: current.room,
+          players: current.players,
+          confirmedGone: _confirmedGone,
+        ),
       );
       _closeRoundIfDecided(state.snapshot!);
     });
   }
 
   void _stopWatching() {
+    _presenceSub?.cancel();
+    _presenceSub = null;
+    _online = const {};
+    _offlineSince.clear();
     _beat?.cancel();
     _beat = null;
     _presenceTick?.cancel();

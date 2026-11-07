@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -30,6 +31,16 @@ abstract interface class RoomRepo {
   });
   Stream<Room?> watchRoom(String code);
   Stream<List<RoomPlayer>> watchPlayers(String code);
+
+  /// Device ids currently connected to this room's realtime channel.
+  ///
+  /// Separate from `last_seen` on purpose: this works on a database that has
+  /// never had the presence migration applied, because it is a property of
+  /// the websocket rather than of any table.
+  Stream<Set<String>> watchPresence({
+    required String code,
+    required String deviceId,
+  });
   Future<void> touch({required String code, required String deviceId});
   Future<bool> roomExists(String code);
   Future<void> setStatus(String code, RoomStatus status);
@@ -173,6 +184,73 @@ class RoomRepository implements RoomRepo {
         .stream(primaryKey: ['id'])
         .eq('room_code', code)
         .map((rows) => rows.map(RoomPlayer.fromRow).toList());
+  }
+
+  /// Who is connected right now, straight from the realtime socket.
+  ///
+  /// The database heartbeat cannot work until the presence migration is
+  /// applied, and until then one person force-quitting leaves a table unable
+  /// to ever finish. The socket knows about that disconnect immediately and
+  /// needs no schema at all.
+  ///
+  /// Emits the empty set if realtime is unavailable, which callers must read
+  /// as "no information", never as "everybody left".
+  @override
+  Stream<Set<String>> watchPresence({
+    required String code,
+    required String deviceId,
+  }) {
+    final controller = StreamController<Set<String>>();
+    RealtimeChannel? channel;
+
+    controller.onListen = () {
+      try {
+        channel = _db.channel(
+          'presence:room:$code',
+          opts: const RealtimeChannelConfig(self: true),
+        );
+
+        void publish() {
+          if (controller.isClosed) return;
+          final ids = <String>{};
+          for (final state in channel!.presenceState()) {
+            for (final presence in state.presences) {
+              final id = presence.payload['device_id'];
+              if (id is String && id.isNotEmpty) ids.add(id);
+            }
+          }
+          controller.add(ids);
+        }
+
+        channel!
+          ..onPresenceSync((_) => publish())
+          ..onPresenceJoin((_) => publish())
+          ..onPresenceLeave((_) => publish())
+          ..subscribe((status, _) async {
+            if (status != RealtimeSubscribeStatus.subscribed) return;
+            try {
+              await channel!.track({'device_id': deviceId});
+            } catch (_) {/* presence is a bonus, never a requirement */}
+          });
+      } catch (_) {
+        if (!controller.isClosed) controller.add(const {});
+      }
+    };
+
+    controller.onCancel = () async {
+      final c = channel;
+      channel = null;
+      if (c != null) {
+        try {
+          await c.untrack();
+        } catch (_) {/* already gone */}
+        try {
+          await _db.removeChannel(c);
+        } catch (_) {/* already gone */}
+      }
+    };
+
+    return controller.stream;
   }
 
   /// "I am still here." Sent on a timer while in a room; a phone that stops

@@ -119,11 +119,19 @@ class RoomSnapshot {
   const RoomSnapshot({
     required this.room,
     required this.players,
+    this.confirmedGone = const {},
     this.now,
   });
 
   final Room room;
   final List<RoomPlayer> players;
+
+  /// Device ids this phone has watched disconnect and stay disconnected.
+  ///
+  /// Worked out by the session from the realtime channel, not from any
+  /// column, so it still works on a database without the presence migration.
+  /// Empty means "nothing known", never "nobody is here".
+  final Set<String> confirmedGone;
 
   /// Injectable so presence can be tested without waiting in real time.
   final DateTime? now;
@@ -140,10 +148,16 @@ class RoomSnapshot {
   /// A database without the presence column cannot tell us who wandered off,
   /// so everyone counts as present — exactly how the app behaved before
   /// presence existed. Better a stuck table than ejecting live players.
-  bool isAtTable(RoomPlayer p) =>
-      p.isOut ||
-      p.lastSeen == null ||
-      _now.difference(p.lastSeen!) < presenceTimeout;
+  bool isAtTable(RoomPlayer p) {
+    // A caught player already has a result; they cannot un-lose by leaving.
+    if (p.isOut) return true;
+    // Watched them drop off the socket and stay off.
+    if (confirmedGone.contains(p.deviceId)) return false;
+    final seen = p.lastSeen;
+    // No presence column on this database: nothing says they left.
+    if (seen == null) return true;
+    return _now.difference(seen) < presenceTimeout;
+  }
 
   /// Players who closed the app without being caught. They are not shown and
   /// never block the round from resolving.

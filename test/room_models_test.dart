@@ -4,6 +4,7 @@ import 'package:who_pays/features/game/domain/game_models.dart';
 import 'package:who_pays/features/room/domain/room_models.dart';
 
 void main() {
+  _socketPresenceTests();
   _presenceUnknownTests();
   final t0 = DateTime.utc(2026, 11, 6, 20);
 
@@ -323,6 +324,77 @@ void _presenceUnknownTests() {
       );
       expect(snap.departed, hasLength(1),
           reason: 'presence still works where the column exists');
+    });
+  });
+}
+
+/// Presence from the realtime socket, which works on a database that never
+/// had the presence migration applied.
+///
+/// The danger here is not missing a departure — it is ejecting somebody who
+/// is sitting at the table. So `confirmedGone` is only ever set by the
+/// session after watching a phone stay off the channel, and an empty set has
+/// to mean "nothing known".
+void _socketPresenceTests() {
+  RoomPlayer p(String name, {String? lastSeen}) => RoomPlayer.fromRow({
+        'id': 'id-$name',
+        'device_id': 'dev-$name',
+        'name': name,
+        'joined_at': DateTime.now()
+            .subtract(const Duration(minutes: 10))
+            .toIso8601String(),
+        'last_seen': ?lastSeen,
+      });
+
+  group('socket presence', () {
+    test('someone confirmed gone stops blocking the round', () {
+      final snap = RoomSnapshot(
+        room: _room,
+        players: [p('Asha'), p('Bala')],
+        confirmedGone: {'dev-Bala'},
+      );
+      expect(snap.stillIn.map((x) => x.name), ['Asha']);
+      expect(snap.isDecided, isTrue,
+          reason: 'one player left standing, so the round can end');
+    });
+
+    test('an empty set means nothing known, not everybody gone', () {
+      final snap = RoomSnapshot(
+        room: _room,
+        players: [p('Asha'), p('Bala')],
+      );
+      expect(snap.stillIn, hasLength(2));
+      expect(snap.isDecided, isFalse);
+    });
+
+    test('a caught player stays on the board even once gone', () {
+      final caught = RoomPlayer.fromRow({
+        'id': 'id-c',
+        'device_id': 'dev-c',
+        'name': 'Chandra',
+        'joined_at': DateTime.now().toIso8601String(),
+        'caught_at': DateTime.now().toIso8601String(),
+        'lasted_ms': 1000,
+        'catch_reason': 'motion',
+      });
+      final snap = RoomSnapshot(
+        room: _room,
+        players: [caught],
+        confirmedGone: {'dev-c'},
+      );
+      expect(snap.loser?.name, 'Chandra',
+          reason: 'closing the app must not erase a result');
+      expect(snap.departed, isEmpty);
+    });
+
+    test('the database heartbeat still wins where the column exists', () {
+      final stale =
+          DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String();
+      final snap = RoomSnapshot(
+        room: _room,
+        players: [p('Asha', lastSeen: stale)],
+      );
+      expect(snap.departed, hasLength(1));
     });
   });
 }

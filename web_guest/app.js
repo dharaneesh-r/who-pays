@@ -314,7 +314,44 @@ function subscribe(code) {
         { event: '*', schema: 'public', table: 'room_players', filter: `room_code=eq.${code}` },
         () => refreshPlayers(code))
     .subscribe();
+
+  joinPresence(code);
 }
+
+// Announce this browser on the room's presence channel.
+//
+// Closing this page drops the socket, and everyone else learns about it at
+// once. Without it a web guest who wanders off leaves the table unable to
+// finish on any database that has not had the presence migration applied —
+// the heartbeat above cannot help, because there is no column to write to.
+let presenceChannel = null;
+
+function joinPresence(code) {
+  leavePresence();
+  try {
+    presenceChannel = db.channel(`presence:room:${code}`, {
+      config: { presence: { key: DEVICE } },
+    });
+    presenceChannel.subscribe(async (status) => {
+      if (status !== 'SUBSCRIBED') return;
+      try {
+        await presenceChannel.track({ device_id: DEVICE });
+      } catch { /* presence is a bonus, never a requirement */ }
+    });
+  } catch {
+    presenceChannel = null;
+  }
+}
+
+function leavePresence() {
+  if (!presenceChannel) return;
+  try { db.removeChannel(presenceChannel); } catch { /* already gone */ }
+  presenceChannel = null;
+}
+
+// Leaving the page should look like leaving the table immediately, rather
+// than waiting for the socket to time out.
+window.addEventListener('pagehide', leavePresence);
 
 async function refreshPlayers(code) {
   const { data } = await db.from('room_players')
