@@ -17,13 +17,16 @@ import '../domain/game_models.dart';
 String _verdict({
   required bool caught,
   required String stakeText,
+  required String stakeTextYou,
   required String? loserName,
   required bool youLost,
 }) {
   if (loserName == null) {
-    return caught ? 'So you $stakeText.' : 'Somebody else $stakeText.';
+    return caught ? 'So you $stakeTextYou.' : 'Somebody else $stakeText.';
   }
-  return youLost ? 'You cracked first — you $stakeText.' : '$loserName $stakeText.';
+  return youLost
+      ? 'You cracked first — you $stakeTextYou.'
+      : '$loserName $stakeText.';
 }
 
 class ResultView extends ConsumerWidget {
@@ -84,6 +87,7 @@ class ResultView extends ConsumerWidget {
               _verdict(
                 caught: caught,
                 stakeText: state.config.stakeText,
+                stakeTextYou: state.config.stakeTextYou,
                 loserName: loserName,
                 youLost: youLost,
               ),

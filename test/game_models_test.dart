@@ -28,6 +28,26 @@ void main() {
       expect(set.stakeText, 'walks the dog');
     });
 
+    test('addresses the player in the second person', () {
+      // The app shipped saying "So you pays the bill" — the third-person
+      // label used where a second-person one was needed.
+      const bill = GameConfig(stake: Stake.bill);
+      expect(bill.stakeText, 'pays the bill');
+      expect(bill.stakeTextYou, 'pay the bill');
+
+      expect(const GameConfig(stake: Stake.dishes).stakeTextYou, 'do the dishes');
+      expect(
+        const GameConfig(stake: Stake.nextRound).stakeTextYou,
+        'buy the next round',
+      );
+    });
+
+    test('a custom stake is used as written in both persons', () {
+      const custom = GameConfig(stake: Stake.custom, customStake: 'walks the dog');
+      expect(custom.stakeText, 'walks the dog');
+      expect(custom.stakeTextYou, 'walks the dog');
+    });
+
     test('clearTarget makes the round open-ended', () {
       const config = GameConfig(target: Duration(minutes: 30));
       expect(config.copyWith(clearTarget: true).target, isNull);

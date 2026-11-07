@@ -5,12 +5,23 @@ import '../../detector/domain/detector_models.dart';
 enum Stake { bill, nextRound, dishes, chores, custom }
 
 extension StakeLabel on Stake {
+  /// Third person, for "Ramesh pays the bill".
   String get label => switch (this) {
         Stake.bill => 'pays the bill',
         Stake.nextRound => 'buys the next round',
         Stake.dishes => 'does the dishes',
         Stake.chores => 'does the chores',
         Stake.custom => 'loses',
+      };
+
+  /// Second person, for "you pay the bill" / "I give up — I pay".
+  /// Without this the app says "So you pays the bill", which it did.
+  String get labelYou => switch (this) {
+        Stake.bill => 'pay the bill',
+        Stake.nextRound => 'buy the next round',
+        Stake.dishes => 'do the dishes',
+        Stake.chores => 'do the chores',
+        Stake.custom => 'lose',
       };
 
   String get short => switch (this) {
@@ -53,6 +64,12 @@ class GameConfig {
   String get stakeText => stake == Stake.custom
       ? (customStake?.trim().isNotEmpty == true ? customStake!.trim() : 'loses')
       : stake.label;
+
+  /// The same stake addressed to the player. A custom stake is free text, so
+  /// it cannot be conjugated — it is used as written.
+  String get stakeTextYou => stake == Stake.custom
+      ? (customStake?.trim().isNotEmpty == true ? customStake!.trim() : 'lose')
+      : stake.labelYou;
 
   GameConfig copyWith({
     Stake? stake,

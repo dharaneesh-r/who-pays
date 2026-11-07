@@ -107,7 +107,7 @@ class PlayView extends ConsumerWidget {
           TextButton(
             onPressed: controller.concede,
             child: Text(
-              'I give up — I ${state.config.stakeText}',
+              'I give up — I ${state.config.stakeTextYou}',
               style: const TextStyle(color: Colors.white38),
             ),
           ),

@@ -29,7 +29,14 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
-              Text('WHO\nPAYS?', style: text.displayLarge),
+              // Long-press the title to reach the sensor read-out. It has to
+              // work in release builds too — thresholds can only be tuned on
+              // real hardware, and testers run release APKs. Hidden rather
+              // than removed, so it never confuses an ordinary player.
+              GestureDetector(
+                onLongPress: () => context.push(DetectorDebugScreen.path),
+                child: Text('WHO\nPAYS?', style: text.displayLarge),
+              ),
               const SizedBox(height: 12),
               Text(
                 'Phones face down. First one to pick up loses.',
