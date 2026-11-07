@@ -36,7 +36,7 @@ Audited against the source on 2026-11-07, not from memory.
 |---|---|---|
 | 14 | **UMP consent SDK not integrated** | Google requires a certified consent platform to serve ads in the EEA/UK. Fine for an India-only launch; required before the US/UK push the revenue plan depends on |
 | 15 | **Firebase not wired** — no Analytics, Crashlytics or Remote Config | Remote Config is the documented way to tune detection thresholds without shipping a release. Right now every threshold change needs a full store update |
-| 16 | **No privacy policy, in app or hosted** | Mandatory for any ad-serving app on Play |
+| 16 | ~~No privacy policy~~ **WRITTEN** | [web_guest/privacy.html](web_guest/privacy.html), linked in Settings. **Still needs hosting** on Cloudflare before the Play listing can reference it |
 | 17 | **iOS is unconfigured** | The `ios/` folder exists but has no camera or motion usage strings in `Info.plist`, no AdMob id, and has never been built |
 
 ## 🟢 Test coverage
