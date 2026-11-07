@@ -139,6 +139,8 @@ class ResultView extends ConsumerWidget {
             )
           else
             FilledButton(
+              // The ad now completes only once dismissed, so the next round
+              // never starts behind it.
               onPressed: () async {
                 await ref.read(adsServiceProvider).maybeShowOnResult();
                 if (session.inRoom) {
@@ -152,12 +154,20 @@ class ResultView extends ConsumerWidget {
           const SizedBox(height: 12),
           OutlinedButton(
             onPressed: () async {
-              controller.reset();
+              // Capture the router *before* awaiting. `controller.reset()`
+              // swaps this widget out for the setup view, so by the time the
+              // ad returns this context is unmounted and `context.pop()` is
+              // silently skipped — which stranded the player on setup.
+              final router = GoRouter.of(context);
+              final canPop = router.canPop();
+
               if (session.inRoom) {
                 await ref.read(roomSessionProvider.notifier).leave();
               }
               await ref.read(adsServiceProvider).maybeShowOnResult();
-              if (context.mounted && context.canPop()) context.pop();
+
+              controller.reset();
+              if (canPop) router.pop();
             },
             child: Text(session.inRoom ? 'LEAVE THE TABLE' : 'DONE'),
           ),

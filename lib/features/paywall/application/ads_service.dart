@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -61,33 +63,48 @@ class AdsService {
     }
   }
 
-  /// Shows the ad if one happens to be ready. Never blocks, never waits — the
-  /// result screen appears instantly whether or not there is an ad.
+  /// Shows the ad if one is ready, and **completes only once it is gone**.
+  ///
+  /// `InterstitialAd.show()` resolves as soon as the ad appears, not when it
+  /// is dismissed. Returning then meant the caller navigated or started the
+  /// next round behind a full-screen ad — the player came back to the wrong
+  /// screen, or to a round already running that they could not see.
+  ///
+  /// Returns immediately when there is no ad, so a player without one never
+  /// waits.
   Future<void> maybeShowOnResult() async {
     if (!_adsAllowed) return;
     final ad = _ad;
     if (ad == null) {
-      await preload();
+      unawaited(preload());
       return;
     }
 
     _ad = null;
+    final dismissed = Completer<void>();
+    void finish(InterstitialAd shown) {
+      shown.dispose();
+      unawaited(preload());
+      if (!dismissed.isCompleted) dismissed.complete();
+    }
+
     ad.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (ad) {
-        ad.dispose();
-        preload();
-      },
-      onAdFailedToShowFullScreenContent: (ad, _) {
-        ad.dispose();
-        preload();
-      },
+      onAdDismissedFullScreenContent: finish,
+      onAdFailedToShowFullScreenContent: (shown, _) => finish(shown),
     );
 
     try {
       await ad.show();
     } catch (_) {
-      ad.dispose();
+      finish(ad);
     }
+
+    // A callback that never arrives must not strand the player on the result
+    // screen forever.
+    return dismissed.future.timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {},
+    );
   }
 
   void dispose() {
