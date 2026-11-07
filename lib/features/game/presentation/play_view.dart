@@ -5,6 +5,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../cards/presentation/table_talk.dart';
 import '../../room/application/room_session.dart';
 import '../../room/presentation/live_standings.dart';
+import '../../room/presentation/room_error_banner.dart';
 import '../application/game_controller.dart';
 import '../domain/game_models.dart';
 
@@ -88,6 +89,7 @@ class PlayView extends ConsumerWidget {
               ],
             ),
           const Spacer(),
+          if (inRoom) const RoomErrorBanner(),
           if (!settling) ...[
             const TableTalk(),
             const SizedBox(height: 16),

@@ -59,6 +59,8 @@ class RoomSession extends Notifier<RoomSessionState> {
   StreamSubscription<Room?>? _roomSub;
   StreamSubscription<List<RoomPlayer>>? _playersSub;
   ProviderSubscription<GameState>? _gameSub;
+  Timer? _beat;
+  Timer? _presenceTick;
 
   Room? _room;
   List<RoomPlayer> _players = const [];
@@ -116,12 +118,23 @@ class RoomSession extends Notifier<RoomSessionState> {
     final deviceId = state.deviceId;
     _stopWatching();
     state = const RoomSessionState();
+    // Leaving on purpose should not then offer to rejoin.
+    unawaited(ref.read(prefsServiceProvider).setLastRoomCode(null));
     if (code != null && deviceId != null) {
       try {
         await _repo.leaveRoom(code: code, deviceId: deviceId);
       } catch (_) {/* leaving is best-effort */}
     }
   }
+
+  /// Rejoin the table this phone was last at, after the app was killed.
+  Future<void> rejoinLast() async {
+    final code = await ref.read(prefsServiceProvider).lastRoomCode();
+    if (code == null) return;
+    await join(code);
+  }
+
+  void dismissError() => state = state.copyWith(clearError: true);
 
   // ---- host actions ----------------------------------------------------------
 
@@ -151,10 +164,24 @@ class RoomSession extends Notifier<RoomSessionState> {
 
   // ---- wiring ----------------------------------------------------------------
 
+  /// How often this phone reports in. Must be comfortably shorter than
+  /// [RoomSnapshot.presenceTimeout] so one missed beat is harmless.
+  static const _heartbeat = Duration(seconds: 15);
+
   void _attach(String code, String deviceId) {
     _stopWatching();
     _reportedThisRound = false;
     state = RoomSessionState(code: code, deviceId: deviceId, joining: false);
+
+    // Remember the table so a killed app can offer to rejoin it.
+    unawaited(ref.read(prefsServiceProvider).setLastRoomCode(code));
+
+    _beat?.cancel();
+    _beat = Timer.periodic(_heartbeat, (_) async {
+      try {
+        await _repo.touch(code: code, deviceId: deviceId);
+      } catch (_) {/* a missed beat is tolerated by the timeout */}
+    });
 
     _roomSub = _repo.watchRoom(code).listen(
       (room) {
@@ -269,9 +296,24 @@ class RoomSession extends Notifier<RoomSessionState> {
     final snapshot = RoomSnapshot(room: room, players: _players);
     state = state.copyWith(snapshot: snapshot, joining: false);
     _closeRoundIfDecided(snapshot);
+
+    // Somebody going absent produces no database change, so nothing would
+    // re-evaluate the round. Re-check on a timer while anyone is still in.
+    _presenceTick ??= Timer.periodic(const Duration(seconds: 10), (_) {
+      final current = state.snapshot;
+      if (current == null) return;
+      state = state.copyWith(
+        snapshot: RoomSnapshot(room: current.room, players: current.players),
+      );
+      _closeRoundIfDecided(state.snapshot!);
+    });
   }
 
   void _stopWatching() {
+    _beat?.cancel();
+    _beat = null;
+    _presenceTick?.cancel();
+    _presenceTick = null;
     _roomSub?.cancel();
     _roomSub = null;
     _playersSub?.cancel();
@@ -288,3 +330,17 @@ class RoomSession extends Notifier<RoomSessionState> {
 
 final roomSessionProvider =
     NotifierProvider<RoomSession, RoomSessionState>(RoomSession.new);
+
+/// The table worth offering to rejoin: one this phone was at, that still
+/// exists on the server. Null when there is nothing to go back to.
+final rejoinableRoomProvider = FutureProvider<String?>((ref) async {
+  final code = await ref.watch(prefsServiceProvider).lastRoomCode();
+  if (code == null) return null;
+  final exists = await ref.watch(roomRepositoryProvider).roomExists(code);
+  if (!exists) {
+    // The table is gone; stop offering it.
+    await ref.read(prefsServiceProvider).setLastRoomCode(null);
+    return null;
+  }
+  return code;
+});

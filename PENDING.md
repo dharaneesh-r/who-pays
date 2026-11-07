@@ -26,9 +26,9 @@ Audited against the source on 2026-11-07, not from memory.
 | 8 | ~~No pack picker~~ **FIXED** | Built in the setup screen as "Talk about…", with padlocks on paid packs |
 | 9 | **Streak has no reminder** | The streak is the only daily-retention mechanic, and nothing reminds anyone. `flutter_local_notifications` is not even a dependency |
 | 10 | **Focus Duel mode not built** | Listed in [CONTEXT.md](CONTEXT.md) as the async mode that gives weekday usage |
-| 11 | **Errors are invisible in the lobby** | `RoomSessionState.error` is only rendered on the join and host screens. A realtime failure mid-round shows the user nothing |
-| 12 | **Players who quit mid-round are never cleaned up** | Their row stays "still in" forever, so `isDecided` never becomes true for that table |
-| 13 | **No way to rejoin a room after the app is killed** | The device id persists and the server would accept a rejoin, but there is no UI for it |
+| 11 | ~~Errors invisible in the lobby~~ **FIXED** | A dismissible banner now shows room errors in the lobby and during a round |
+| 12 | ~~Players who quit are never cleaned up~~ **FIXED** | Phones heartbeat `last_seen` every 15s; anyone quiet for 45s drops out of the standings and no longer blocks the round. Needs `supabase/migration_presence.sql` |
+| 13 | ~~No way to rejoin after the app is killed~~ **FIXED** | Home shows a green REJOIN button when the saved table still exists |
 
 ## 🟡 Policy and platform — blocks publishing, not playing
 

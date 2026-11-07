@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PrefsService {
   static const _playerNameKey = 'player_name';
   static const _sirenKey = 'siren_enabled';
+  static const _lastRoomKey = 'last_room_code';
 
   static const defaultPlayerName = 'You';
 
@@ -29,6 +30,22 @@ class PrefsService {
       await prefs.remove(_playerNameKey);
     } else {
       await prefs.setString(_playerNameKey, clean);
+    }
+  }
+
+  /// The table this phone was last at, so a player whose app was killed can
+  /// be offered a way back instead of having to ask for the code again.
+  Future<String?> lastRoomCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_lastRoomKey);
+  }
+
+  Future<void> setLastRoomCode(String? code) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (code == null) {
+      await prefs.remove(_lastRoomKey);
+    } else {
+      await prefs.setString(_lastRoomKey, code);
     }
   }
 

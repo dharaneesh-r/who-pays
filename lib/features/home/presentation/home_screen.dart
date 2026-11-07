@@ -9,8 +9,10 @@ import '../../../data/remote/supabase_init.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../../detector/presentation/detector_debug_screen.dart';
 import '../../game/presentation/game_screen.dart';
+import '../../room/application/room_session.dart';
 import '../../room/presentation/host_setup_screen.dart';
 import '../../room/presentation/join_room_screen.dart';
+import '../../room/presentation/room_lobby_screen.dart';
 import '../../stats/presentation/stats_screen.dart';
 import '../../stats/presentation/streak_badge.dart';
 
@@ -24,6 +26,7 @@ class HomeScreen extends ConsumerWidget {
     final text = Theme.of(context).textTheme;
     final online = ref.watch(supabaseReadyProvider);
     final hasName = ref.watch(hasPlayerNameProvider).value ?? true;
+    final rejoin = ref.watch(rejoinableRoomProvider).value;
 
     return Scaffold(
       body: SafeArea(
@@ -47,6 +50,26 @@ class HomeScreen extends ConsumerWidget {
                 style: text.bodyMedium?.copyWith(color: Colors.white60),
               ),
               const Spacer(),
+              // Offered only when the saved table still exists, so a player
+              // whose app was killed mid-round can get straight back in.
+              if (rejoin != null) ...[
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.safe,
+                    foregroundColor: Colors.black,
+                  ),
+                  onPressed: () async {
+                    await ref.read(roomSessionProvider.notifier).rejoinLast();
+                    if (!context.mounted) return;
+                    if (ref.read(roomSessionProvider).inRoom) {
+                      context.push(RoomLobbyScreen.path);
+                    }
+                  },
+                  icon: const Icon(Icons.replay),
+                  label: Text('REJOIN $rejoin'),
+                ),
+                const SizedBox(height: 12),
+              ],
               const StreakBadge(),
               const SizedBox(height: 16),
               FilledButton(

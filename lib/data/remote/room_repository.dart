@@ -82,6 +82,7 @@ class RoomRepository {
       'room_code': code,
       'device_id': deviceId,
       'name': name,
+      'last_seen': DateTime.now().toUtc().toIso8601String(),
     }, onConflict: 'room_code,device_id');
 
     return Room.fromRow(rows.first);
@@ -101,6 +102,30 @@ class RoomRepository {
         .stream(primaryKey: ['id'])
         .eq('room_code', code)
         .map((rows) => rows.map(RoomPlayer.fromRow).toList());
+  }
+
+  /// "I am still here." Sent on a timer while in a room; a phone that stops
+  /// sending it is treated as having left the table.
+  Future<void> touch({
+    required String code,
+    required String deviceId,
+  }) async {
+    await _db
+        .from('room_players')
+        .update({'last_seen': DateTime.now().toUtc().toIso8601String()})
+        .eq('room_code', code)
+        .eq('device_id', deviceId);
+  }
+
+  /// Does this room still exist? Used to decide whether a saved code is worth
+  /// offering as a rejoin.
+  Future<bool> roomExists(String code) async {
+    try {
+      final rows = await _db.from('rooms').select('code').eq('code', code).limit(1);
+      return rows.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Host only: moves everyone to the next phase.

@@ -56,6 +56,7 @@ class RoomPlayer {
     required this.deviceId,
     required this.name,
     required this.joinedAt,
+    required this.lastSeen,
     this.caughtAt,
     this.lasted,
     this.reason,
@@ -65,6 +66,10 @@ class RoomPlayer {
   final String deviceId;
   final String name;
   final DateTime joinedAt;
+
+  /// Last time this phone reported in. A player who closes the app stops
+  /// touching this, which is how the table notices they are gone.
+  final DateTime lastSeen;
 
   /// Null while still in the game.
   final DateTime? caughtAt;
@@ -77,12 +82,17 @@ class RoomPlayer {
     final lastedMs = row['lasted_ms'] as int?;
     final reasonName = row['catch_reason'] as String?;
 
+    final joined = DateTime.tryParse(row['joined_at'] as String? ?? '') ??
+        DateTime.now();
+
     return RoomPlayer(
       id: row['id'] as String,
       deviceId: row['device_id'] as String,
       name: row['name'] as String,
-      joinedAt: DateTime.tryParse(row['joined_at'] as String? ?? '') ??
-          DateTime.now(),
+      joinedAt: joined,
+      // Older rows predate the presence column; treat them as just-seen rather
+      // than instantly absent.
+      lastSeen: DateTime.tryParse(row['last_seen'] as String? ?? '') ?? joined,
       caughtAt: row['caught_at'] == null
           ? null
           : DateTime.tryParse(row['caught_at'] as String),
@@ -98,10 +108,34 @@ class RoomPlayer {
 
 /// The whole table, as this phone currently understands it.
 class RoomSnapshot {
-  const RoomSnapshot({required this.room, required this.players});
+  const RoomSnapshot({
+    required this.room,
+    required this.players,
+    this.now,
+  });
 
   final Room room;
   final List<RoomPlayer> players;
+
+  /// Injectable so presence can be tested without waiting in real time.
+  final DateTime? now;
+
+  /// How long a phone can go quiet before the table assumes it left.
+  /// Comfortably longer than the heartbeat interval, so one missed beat on a
+  /// bad restaurant connection does not eject anybody.
+  static const presenceTimeout = Duration(seconds: 45);
+
+  DateTime get _now => now ?? DateTime.now();
+
+  /// A caught player stays on the board forever — they already have a result.
+  /// Only someone still playing can go absent.
+  bool isAtTable(RoomPlayer p) =>
+      p.isOut || _now.difference(p.lastSeen) < presenceTimeout;
+
+  /// Players who closed the app without being caught. They are not shown and
+  /// never block the round from resolving.
+  List<RoomPlayer> get departed =>
+      players.where((p) => !isAtTable(p)).toList();
 
   /// The loser: whoever was caught earliest. Decided by timestamp rather than
   /// by whichever phone's message reached the server first, so two people
@@ -113,7 +147,7 @@ class RoomSnapshot {
   }
 
   List<RoomPlayer> get stillIn =>
-      players.where((p) => !p.isOut).toList()
+      players.where((p) => !p.isOut && isAtTable(p)).toList()
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
   /// Everyone, ordered for the live board: survivors first, then the fallen in
@@ -124,7 +158,9 @@ class RoomSnapshot {
     return [...stillIn, ...out];
   }
 
-  /// A round is over once at most one player is left standing.
+  /// A round is over once at most one player is left standing. Someone who
+  /// walked away does not count as standing — before presence existed, one
+  /// closed app left a table unable to ever finish.
   bool get isDecided => players.isNotEmpty && stillIn.length <= 1;
 
   RoomPlayer? playerFor(String deviceId) =>

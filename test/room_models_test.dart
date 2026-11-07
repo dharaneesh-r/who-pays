@@ -13,16 +13,19 @@ void main() {
     config: GameConfig(),
   );
 
+  /// [quietForSeconds] simulates a phone that has stopped reporting in.
   RoomPlayer player(
     String name, {
     required String device,
     int? caughtAfterSeconds,
+    int quietForSeconds = 0,
   }) {
     return RoomPlayer(
       id: 'id-$name',
       deviceId: device,
       name: name,
       joinedAt: t0,
+      lastSeen: t0.subtract(Duration(seconds: quietForSeconds)),
       caughtAt: caughtAfterSeconds == null
           ? null
           : t0.add(Duration(seconds: caughtAfterSeconds)),
@@ -37,6 +40,7 @@ void main() {
     test('is whoever was caught earliest, not whoever reported first', () {
       final snapshot = RoomSnapshot(
         room: room,
+        now: t0,
         players: [
           // Deliberately out of order: the list order must not decide this.
           player('Priya', device: 'b', caughtAfterSeconds: 90),
@@ -51,6 +55,7 @@ void main() {
     test('is null while nobody has cracked', () {
       final snapshot = RoomSnapshot(
         room: room,
+        now: t0,
         players: [player('Arjun', device: 'c'), player('Priya', device: 'b')],
       );
       expect(snapshot.loser, isNull);
@@ -61,6 +66,7 @@ void main() {
     test('survivors first, then the fallen in the order they fell', () {
       final snapshot = RoomSnapshot(
         room: room,
+        now: t0,
         players: [
           player('Priya', device: 'b', caughtAfterSeconds: 90),
           player('Ramesh', device: 'a', caughtAfterSeconds: 40),
@@ -77,6 +83,7 @@ void main() {
     test('survivors are sorted by name so the board does not jitter', () {
       final snapshot = RoomSnapshot(
         room: room,
+        now: t0,
         players: [
           player('zoe', device: 'z'),
           player('Adam', device: 'a'),
@@ -90,6 +97,7 @@ void main() {
     test('false while two or more are still in', () {
       final snapshot = RoomSnapshot(
         room: room,
+        now: t0,
         players: [
           player('A', device: 'a'),
           player('B', device: 'b'),
@@ -102,6 +110,7 @@ void main() {
     test('true once only one is left', () {
       final snapshot = RoomSnapshot(
         room: room,
+        now: t0,
         players: [
           player('A', device: 'a'),
           player('B', device: 'b', caughtAfterSeconds: 10),
@@ -111,7 +120,7 @@ void main() {
     });
 
     test('false for an empty table rather than claiming a winner', () {
-      const snapshot = RoomSnapshot(room: room, players: []);
+      final snapshot = RoomSnapshot(room: room, now: t0, players: const []);
       expect(snapshot.isDecided, isFalse);
     });
   });
@@ -173,10 +182,83 @@ void main() {
     });
   });
 
+  group('presence', () {
+    // A player who closed the app left a row that was neither caught nor
+    // present, so the round could never resolve and the table was stuck.
+    test('a player who stopped reporting is not still in the game', () {
+      final snapshot = RoomSnapshot(
+        room: room,
+        now: t0,
+        players: [
+          player('Here', device: 'a'),
+          player('Gone', device: 'b', quietForSeconds: 120),
+        ],
+      );
+
+      expect(snapshot.stillIn.map((p) => p.name), ['Here']);
+      expect(snapshot.departed.map((p) => p.name), ['Gone']);
+    });
+
+    test('a quiet phone no longer blocks the round from resolving', () {
+      final snapshot = RoomSnapshot(
+        room: room,
+        now: t0,
+        players: [
+          player('Here', device: 'a'),
+          player('Gone', device: 'b', quietForSeconds: 120),
+        ],
+      );
+      expect(snapshot.isDecided, isTrue);
+    });
+
+    test('a brief gap does not eject anybody', () {
+      // Shorter than the timeout: a missed heartbeat on bad wifi.
+      final snapshot = RoomSnapshot(
+        room: room,
+        now: t0,
+        players: [
+          player('Here', device: 'a'),
+          player('Blip', device: 'b', quietForSeconds: 30),
+        ],
+      );
+      expect(snapshot.stillIn.length, 2);
+      expect(snapshot.isDecided, isFalse);
+    });
+
+    test('a caught player stays on the board however quiet they go', () {
+      final snapshot = RoomSnapshot(
+        room: room,
+        now: t0,
+        players: [
+          player('Here', device: 'a'),
+          player('Caught', device: 'b', caughtAfterSeconds: 10, quietForSeconds: 600),
+        ],
+      );
+
+      expect(snapshot.departed, isEmpty);
+      expect(snapshot.standings.map((p) => p.name), ['Here', 'Caught']);
+      expect(snapshot.loser?.name, 'Caught');
+    });
+
+    test('everyone leaving does not invent a winner', () {
+      final snapshot = RoomSnapshot(
+        room: room,
+        now: t0,
+        players: [
+          player('Gone1', device: 'a', quietForSeconds: 120),
+          player('Gone2', device: 'b', quietForSeconds: 120),
+        ],
+      );
+      expect(snapshot.stillIn, isEmpty);
+      expect(snapshot.loser, isNull);
+    });
+  });
+
   group('playerFor', () {
     test('finds this phone, and returns null for a stranger', () {
       final snapshot = RoomSnapshot(
         room: room,
+        now: t0,
         players: [player('Ramesh', device: 'a')],
       );
       expect(snapshot.playerFor('a')?.name, 'Ramesh');
