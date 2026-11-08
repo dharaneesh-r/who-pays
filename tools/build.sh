@@ -29,15 +29,22 @@ if [[ "$TARGET" == "apk" && ! " $* " =~ " --split-per-abi " ]]; then
   ARGS+=(--target-platform android-arm64)
 fi
 
-# Pre-flight. These are the two things that are invisible until it is too
-# late: a build with Google's test ad unit earns nothing, and a build with the
-# wrong JOIN_HOST prints QR codes that lead somewhere dead — on paper, on a
-# table, in front of people. Both are silent failures, so say them out loud.
+# Pre-flight. Both of these are invisible until it is far too late: which ad
+# unit a build carries, and where its QR codes point. Say them out loud.
 warned=0
-if [[ ! " $* " =~ "ADMOB_INTERSTITIAL=" ]]; then
-  echo "⚠ ads: building with Google's TEST ad unit — this build earns nothing."
-  echo "    add --dart-define=ADMOB_INTERSTITIAL=ca-app-pub-…/… for a real one"
-  echo "    (and -PadmobAppId=ca-app-pub-…~… for the manifest app id)"
+
+# AdsService defaults to the REAL unit in release and the test unit in debug,
+# so a plain release build serves live ads. Tapping your own live ad is
+# invalid traffic, and it is the usual way a small developer loses an AdMob
+# account — which makes a warning that says "test ad unit" on a live build
+# worse than no warning at all. Report what the build will actually carry.
+if [[ " $* " =~ "ADMOB_INTERSTITIAL=" ]]; then
+  echo "• ads: using the unit passed on the command line."
+else
+  echo "⚠ ads: this is a RELEASE build, so it serves LIVE ads."
+  echo "    DO NOT tap them — clicking your own ads gets the account banned."
+  echo "    For a safe build to poke at, use: flutter run (debug uses test ads),"
+  echo "    or pass --dart-define=ADMOB_INTERSTITIAL=ca-app-pub-3940256099942544/1033173712"
   warned=1
 fi
 if [[ ! " $* " =~ "JOIN_HOST=" ]]; then

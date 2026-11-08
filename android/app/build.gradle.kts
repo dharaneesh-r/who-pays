@@ -53,7 +53,11 @@ android {
         // one place at build time rather than edited into a tracked file and
         // accidentally committed — or, worse, accidentally not.
         //
-        // Defaults to Google's public test app id. Override with:
+        // Defaults to the REAL app id, matching AdsService, which uses the
+        // real interstitial unit in release builds. The two must agree: a
+        // real unit under a test app id does not serve, and the mismatch is
+        // reported as a vague initialisation failure rather than anything
+        // that names the cause. Override with:
         //   -PadmobAppId=ca-app-pub-XXXXXXXX~YYYYYYYY
         manifestPlaceholders["admobAppId"] =
             (project.findProperty("admobAppId") as String?)

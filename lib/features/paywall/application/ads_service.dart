@@ -22,9 +22,16 @@ class AdsService {
   InterstitialAd? _ad;
   bool _loading = false;
 
-  /// Google's public test units. Replace with the real ids from AdMob before
-  /// release — shipping with these earns nothing, and serving live ads to
-  /// yourself during testing gets the account banned.
+  /// Which unit a build serves is decided by the build mode below.
+  ///
+  /// Debug gets Google's public test unit, release gets the real one. That
+  /// split exists because tapping your own live ad is invalid traffic, and
+  /// invalid traffic is the usual way a small developer loses an AdMob
+  /// account — so the build you poke at by hand must never carry the real
+  /// unit, and the build you ship must never carry the test one.
+  ///
+  /// A release build is therefore NOT safe to tap. `tools/build.sh` says so
+  /// on every build.
   static const _testInterstitial = 'ca-app-pub-3940256099942544/1033173712';
   static const _realInterstitial = 'ca-app-pub-7599014130116297/9835901990';
 
