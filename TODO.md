@@ -66,7 +66,9 @@ Then rebuild so the QR codes point at the real place:
 tools/build.sh appbundle --dart-define=JOIN_HOST=https://your-domain.vercel.app
 ```
 
-Full detail in [web_guest/DEPLOY.md](web_guest/DEPLOY.md).
+Full detail — why it blocks the launch, the one Vercel setting that matters,
+how to verify it, and what to do afterwards — in
+[web_guest/DEPLOY.md](web_guest/DEPLOY.md).
 
 Done when: scanning a QR code from the app opens the join page.
 
