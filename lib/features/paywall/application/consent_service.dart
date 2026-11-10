@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -23,6 +24,7 @@ class ConsentService {
   /// EEA/UK no consent was needed in the first place and blocking ads there
   /// would remove the app's only revenue for a problem that does not apply.
   Future<bool> ensure() async {
+    if (kIsWeb) return true;
     if (_asked) return true;
     _asked = true;
 

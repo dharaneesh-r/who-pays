@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/detector/domain/detector_models.dart';
@@ -42,6 +43,7 @@ class RoundDao {
     String? roomCode,
     DateTime? playedAt,
   }) async {
+    if (kIsWeb) return 0;
     final db = await _database.instance;
 
     return db.transaction((txn) async {
@@ -72,6 +74,7 @@ class RoundDao {
   }
 
   Future<List<StoredRound>> recentRounds({int limit = 50}) async {
+    if (kIsWeb) return const [];
     final db = await _database.instance;
     final rows = await db.query(
       'rounds',
@@ -106,6 +109,7 @@ class RoundDao {
 
   /// Every player appearance since [since], for the leaderboard.
   Future<List<PlayerAppearance>> appearancesSince(DateTime since) async {
+    if (kIsWeb) return const [];
     final db = await _database.instance;
     final rows = await db.rawQuery(
       '''
@@ -131,6 +135,7 @@ class RoundDao {
 
   /// Rounds played since midnight — what the free tier is counted against.
   Future<int> roundsToday() async {
+    if (kIsWeb) return 0;
     final db = await _database.instance;
     final now = DateTime.now();
     final midnight = DateTime(now.year, now.month, now.day);
@@ -144,6 +149,7 @@ class RoundDao {
 
   /// Every day on which a round was played, newest first. Feeds the streak.
   Future<List<DateTime>> playedDays({int limit = 400}) async {
+    if (kIsWeb) return const [];
     final db = await _database.instance;
     final rows = await db.query(
       'rounds',
@@ -159,6 +165,7 @@ class RoundDao {
 
   /// Longest this player has ever lasted.
   Future<Duration> personalBest(String name) async {
+    if (kIsWeb) return Duration.zero;
     final db = await _database.instance;
     final rows = await db.rawQuery(
       'SELECT MAX(lasted_ms) AS best FROM round_players WHERE name = ?',

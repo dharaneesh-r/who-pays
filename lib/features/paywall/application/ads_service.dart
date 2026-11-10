@@ -43,6 +43,7 @@ class AdsService {
   bool get _adsAllowed => !_ref.read(entitlementsProvider).adsRemoved;
 
   Future<void> init() async {
+    if (kIsWeb) return;
     if (!_adsAllowed) return;
     try {
       // EEA/UK consent must be resolved before the first ad request. Outside
@@ -54,6 +55,7 @@ class AdsService {
   }
 
   Future<void> preload() async {
+    if (kIsWeb) return;
     if (!_adsAllowed || _ad != null || _loading) return;
     _loading = true;
 

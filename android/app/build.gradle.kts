@@ -24,7 +24,7 @@ android {
     // version AGP defaults to and the one installed here. No plugin compiles
     // native code; the NDK is needed only so release builds can strip debug
     // symbols from the prebuilt .so files with llvm-strip.
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
