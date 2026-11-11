@@ -281,8 +281,9 @@ abstract interface class PlaceProvider {
 | Implementation | Use |
 |---|---|
 | `GooglePlacesProvider` | **Built.** Places API (New) `searchNearby`. Key injected by `--dart-define=PLACES_KEY=...`, the same pattern `tools/build.sh` already uses for AdMob ids. Falls back to the fake with no key, so a debug build never spends anything |
-| `FakePlaceProvider` | Tests and offline development. Fixed list, no network, no key |
-| `OverpassProvider` | Optional fallback if the Google billing-account requirement is rejected |
+| `OverpassPlaceProvider` | **The default.** OpenStreetMap, free, no key, no billing, no signup. No ratings, and thinner coverage outside cities |
+| `FakePlaceProvider` | Tests only. Fixed list, no network, no key |
+
 
 **Why an interface:** the owner asked for "whichever is free and accurate".
 No single source is both. Google is accurate and, at one call per dinner, fits

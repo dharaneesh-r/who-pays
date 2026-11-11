@@ -1,23 +1,22 @@
 /// Whether the app asks the phone where it is.
 ///
-/// **Off by default, and that is a policy decision, not an oversight.**
+/// **On as of 11 Nov 2026**, with `ACCESS_COARSE_LOCATION` declared in the
+/// manifest. It was off before that, deliberately: declaring the permission
+/// means the Play Data Safety form must cover it, and adding one after the
+/// 14-day closed test starts restarts review (VENUES.md §7, §16).
 ///
-/// Turning it on means declaring a location permission, which means a new Play
-/// Data Safety declaration. [TODO.md] makes the signing keystore and the
-/// hosted privacy policy the two gates before the 14-day / 12-tester closed
-/// test, and adding a permission after that clock starts restarts the review.
-/// See VENUES.md §7 and §16.
-///
-/// So until v1 is through that test, the app uses a fixed point and the ballot
-/// still works end to end on fake places. To turn it on, both of these are
-/// needed — the flag alone does nothing:
-///
-///   1. Uncomment `ACCESS_COARSE_LOCATION` in
-///      `android/app/src/main/AndroidManifest.xml`.
-///   2. Build with `--dart-define=LOCATION=true`.
+/// The owner chose to turn it on, because a fixed point meant someone in
+/// Coimbatore was shown restaurants in Chennai. **The Data Safety form must
+/// now declare approximate location** — that obligation did not go away, it
+/// just became due.
 ///
 /// Coarse only, one fix, never in the background. The search radius is 5 km;
 /// nothing here needs to know which table you are sitting at.
 abstract final class LocationConfig {
-  static const enabled = bool.fromEnvironment('LOCATION');
+  /// On by default as of 11 Nov 2026. The owner tested in Coimbatore and got
+  /// restaurants in Chennai, which is what a fixed point always gives you.
+  ///
+  /// Build with `--dart-define=LOCATION=false` to go back to the fixed point,
+  /// which is still useful for a demo with no signal.
+  static const enabled = bool.fromEnvironment('LOCATION', defaultValue: true);
 }

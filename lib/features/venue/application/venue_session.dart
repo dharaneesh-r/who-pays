@@ -6,6 +6,7 @@ import '../../../core/config/places_config.dart';
 import '../../../data/local/device_identity.dart';
 import '../../room/application/room_session.dart';
 import '../data/google_places_provider.dart';
+import '../data/overpass_place_provider.dart';
 import '../data/location_source.dart';
 import '../data/venue_repository.dart';
 import '../domain/place_provider.dart';
@@ -24,12 +25,22 @@ const maxCandidates = 20;
 /// fallback is the useful part: a debug build and the test suite never touch
 /// the network or spend anything, and a release built without the key shows
 /// fake restaurants rather than an error at a dinner table.
+/// Google when the build carries a key, OpenStreetMap otherwise.
+///
+/// OSM is the default rather than the fake list because a fake list ignores
+/// where you are: the owner opened this in Coimbatore and was offered
+/// restaurants in Chennai. Free, no key, no billing — it just works, at the
+/// cost of no ratings and thinner coverage outside cities.
 final placeProviderProvider = Provider<PlaceProvider>((ref) {
-  if (!PlacesConfig.isConfigured) return const FakePlaceProvider();
-  final provider = GooglePlacesProvider();
-  // The real one owns an http.Client, which keeps sockets open until closed.
-  ref.onDispose(provider.close);
-  return provider;
+  if (PlacesConfig.isConfigured) {
+    final google = GooglePlacesProvider();
+    // These own an http.Client, which holds sockets open until closed.
+    ref.onDispose(google.close);
+    return google;
+  }
+  final osm = OverpassPlaceProvider();
+  ref.onDispose(osm.close);
+  return osm;
 });
 
 class VenueSessionState {

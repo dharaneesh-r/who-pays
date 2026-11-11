@@ -5,18 +5,10 @@
          background: the search radius is 5 km, so street-level accuracy would
          be a bigger permission for no benefit.
 
-         Commented out on purpose. Declaring it needs a new Play Data Safety
-         declaration, and adding one after the 14-day closed test has started
-         restarts the review (VENUES.md §7, §16). To turn the feature on,
-         uncomment the line below AND pass the LOCATION dart-define, set to
-         true, at build time. The flag alone does nothing.
-
-         Note for whoever edits this: XML comments cannot contain a double
-         hyphen, so write the dart-define by name rather than as a flag. A
-         double hyphen here makes the whole manifest unparseable and the build
-         fails in processDebugMainManifest, nowhere near this file.
+         Declared as of 11 Nov 2026. This MUST be reflected in the Play Data
+         Safety form: approximate location, collected, optional, purpose "app
+         functionality". Do not submit the listing without it. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    -->
     <!-- Haptic feedback when a player is caught -->
     <uses-permission android:name="android.permission.VIBRATE"/>
     <!-- The accelerometer is required: the whole game is pick-up detection -->
