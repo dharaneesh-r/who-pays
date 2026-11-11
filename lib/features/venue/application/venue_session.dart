@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/config/places_config.dart';
 import '../../../data/local/device_identity.dart';
 import '../../room/application/room_session.dart';
+import '../data/chained_place_provider.dart';
 import '../data/google_places_provider.dart';
+import '../data/nominatim_place_provider.dart';
 import '../data/overpass_place_provider.dart';
 import '../data/location_source.dart';
 import '../data/venue_repository.dart';
@@ -38,9 +40,16 @@ final placeProviderProvider = Provider<PlaceProvider>((ref) {
     ref.onDispose(google.close);
     return google;
   }
-  final osm = OverpassPlaceProvider();
-  ref.onDispose(osm.close);
-  return osm;
+  // Free sources, chained. Overpass first because a purpose-built POI query
+  // gives the better list; Nominatim behind it because it is a different
+  // service on the same data, so an Overpass outage — which happened on 11
+  // Nov, on every mirror at once — no longer empties the ballot. Nominatim
+  // also resolves street names Overpass can only report when mapped.
+  final overpass = OverpassPlaceProvider();
+  final nominatim = NominatimPlaceProvider();
+  ref.onDispose(overpass.close);
+  ref.onDispose(nominatim.close);
+  return ChainedPlaceProvider([overpass, nominatim]);
 });
 
 class VenueSessionState {

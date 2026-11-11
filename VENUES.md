@@ -281,7 +281,9 @@ abstract interface class PlaceProvider {
 | Implementation | Use |
 |---|---|
 | `GooglePlacesProvider` | **Built.** Places API (New) `searchNearby`. Key injected by `--dart-define=PLACES_KEY=...`, the same pattern `tools/build.sh` already uses for AdMob ids. Falls back to the fake with no key, so a debug build never spends anything |
-| `OverpassPlaceProvider` | **The default.** OpenStreetMap, free, no key, no billing, no signup. No ratings, and thinner coverage outside cities |
+| `ChainedPlaceProvider` | **The default.** Asks each free source in turn until one has places. Overpass first (purpose-built POI query), Nominatim behind it |
+| `OverpassPlaceProvider` | OpenStreetMap via Overpass. Free, no key. Three mirrors. Best structured query, least reliable servers |
+| `NominatimPlaceProvider` | OpenStreetMap via Nominatim. Free, no key. **Better addresses** — it resolves the containing street where Overpass can only report mapped `addr:*` tags. A geocoder, so it is a fallback, used at one request per dinner |
 | `FakePlaceProvider` | Tests only. Fixed list, no network, no key |
 
 
