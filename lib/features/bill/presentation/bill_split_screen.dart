@@ -11,6 +11,7 @@ import '../../room/application/room_session.dart';
 import '../domain/bill_split.dart';
 import '../domain/money.dart';
 import '../domain/participant_seed.dart';
+import '../domain/resolve_loser.dart';
 
 /// Who owes what.
 ///
@@ -96,10 +97,16 @@ class _BillSplitScreenState extends ConsumerState<BillSplitScreen> {
     final room = ref.watch(roomSessionProvider);
     final myName = ref.watch(playerNameProvider).value;
 
-    // The loser is whoever cracked *first*, which only the room knows. Solo
-    // rounds have no loser worth naming — "You" owing yourself money is not
-    // a split.
-    final loser = room.snapshot?.loser?.name;
+    // Who lost. The rule lives in resolveLoser() with its own tests, because
+    // getting it wrong here was invisible to every unit test: solo rounds
+    // have no room, so reading the loser from the snapshot told a player who
+    // had just been caught that nobody had cracked.
+    final loser = resolveLoser(
+      roomLoser: room.snapshot?.loser?.name,
+      inRoom: room.inRoom,
+      caught: game.result?.outcome == RoundOutcome.caught,
+      myName: myName,
+    );
 
     final tableNames = room.snapshot?.standings.map((p) => p.name).toList();
     if (tableNames != null && tableNames.isNotEmpty) {
