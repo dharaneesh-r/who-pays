@@ -34,7 +34,9 @@ class NominatimPlaceProvider implements PlaceProvider {
   static final _defaultEndpoint =
       Uri.parse('https://nominatim.openstreetmap.org/search');
 
-  static const _timeout = Duration(seconds: 20);
+  /// Keeps the worst case — every Overpass mirror dead, then this — inside
+  /// about half a minute rather than two and a half.
+  static const _timeout = Duration(seconds: 12);
 
   void close() => _client.close();
 

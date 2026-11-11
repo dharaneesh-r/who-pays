@@ -44,9 +44,18 @@ class OverpassPlaceProvider implements PlaceProvider {
   /// broader than `restaurant` alone. `food_court` matters in malls.
   static const _amenities = 'restaurant|cafe|fast_food|food_court';
 
+  /// Short on purpose, and much shorter than the server-side `[timeout:25]`
+  /// in the query.
+  ///
+  /// Measured on a phone in Coimbatore: with 25 s per mirror, three failing
+  /// mirrors meant 75 s of spinner before the fallback was even tried, and a
+  /// full search took 144 s. Nobody waits that long at a table. A healthy
+  /// Overpass answers this query in two or three seconds, so anything past
+  /// six is already a sick server and the next source is the better bet.
+  ///
   /// Public Overpass instances are a shared volunteer resource. One request
   /// per dinner is well within fair use; polling would not be.
-  static const _timeout = Duration(seconds: 25);
+  static const _timeout = Duration(seconds: 6);
 
   void close() => _client.close();
 
