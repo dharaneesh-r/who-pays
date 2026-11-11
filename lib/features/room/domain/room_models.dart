@@ -17,6 +17,7 @@ class Room {
     required this.status,
     required this.config,
     this.startedAt,
+    this.decidedVenueId,
   });
 
   final String code;
@@ -24,6 +25,14 @@ class Room {
   final RoomStatus status;
   final GameConfig config;
   final DateTime? startedAt;
+
+  /// The venue the host settled on, or null while the table is still voting.
+  ///
+  /// Null on a database without `migration_venues.sql` applied, which reads as
+  /// "no decision" — the same as a table that has not voted. That is the safe
+  /// direction: the venue feature quietly does nothing rather than breaking
+  /// the game.
+  final String? decidedVenueId;
 
   bool isHost(String deviceId) => hostId == deviceId;
 
@@ -46,6 +55,7 @@ class Room {
       startedAt: row['started_at'] == null
           ? null
           : DateTime.tryParse(row['started_at'] as String),
+      decidedVenueId: row['decided_venue_id'] as String?,
     );
   }
 }

@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../domain/join_link.dart';
 import 'room_error_banner.dart';
 import '../../game/presentation/game_screen.dart';
+import '../../venue/presentation/venue_ballot_screen.dart';
 import '../application/room_session.dart';
 import '../domain/room_models.dart';
 
@@ -118,6 +119,18 @@ class RoomLobbyScreen extends ConsumerWidget {
                       'Loser ${snapshot.room.config.stakeText}',
                       textAlign: TextAlign.center,
                       style: text.titleMedium?.copyWith(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 12),
+                    // Guests reach the ballot from here too — the host finds
+                    // the places, but everyone votes.
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                        textStyle: const TextStyle(fontSize: 14),
+                      ),
+                      onPressed: () => context.push(VenueBallotScreen.path),
+                      icon: const Icon(Icons.restaurant_outlined, size: 18),
+                      label: const Text('WHERE TO EAT'),
                     ),
                     const SizedBox(height: 16),
                     if (session.isHost)

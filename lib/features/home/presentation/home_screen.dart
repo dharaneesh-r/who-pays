@@ -17,6 +17,7 @@ import '../../room/presentation/join_room_screen.dart';
 import '../../room/presentation/room_lobby_screen.dart';
 import '../../stats/presentation/stats_screen.dart';
 import '../../stats/presentation/streak_badge.dart';
+import '../../venue/presentation/venue_ballot_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -104,12 +105,21 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              // A Wrap rather than a Row: three labels do not fit on one line
+              // at 360dp in every language, and a wrapped line is better than
+              // an overflow stripe across the bottom of the home screen.
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   TextButton(
                     onPressed: () => context.push(StatsScreen.path),
                     child: const Text('My record'),
+                  ),
+                  const Text('·', style: TextStyle(color: Colors.white24)),
+                  TextButton(
+                    onPressed: () => context.push(VenueBallotScreen.path),
+                    child: const Text('Where to eat'),
                   ),
                   const Text('·', style: TextStyle(color: Colors.white24)),
                   TextButton(

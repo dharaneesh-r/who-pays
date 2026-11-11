@@ -9,6 +9,16 @@
 // API, which catches the most common tell: switching away to another app.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+// Absolute, like the script tag in index.html: this page is also served
+// at /j/CODE, where a relative path would resolve to /j/ballot.js and 404.
+import {
+  approvalsFor,
+  isApprovedBy,
+  ranked,
+  trailing,
+  venueSubtitle,
+  votersCount,
+} from '/ballot.js';
 
 const SUPABASE_URL = 'https://uhslpvssmpmhtmlmncxo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_3oYIMsneJAbIFvDUP7N_Bw_xqxo-UIn';
@@ -214,6 +224,158 @@ async function startSensors() {
 }
 
 // ---------------------------------------------------------------------------
+// Where to eat
+//
+// Spec: VENUES.md §12-§13. Approval voting, one round: tap every place you are
+// willing to go, most approvals wins.
+//
+// The tally and the tie-break live in ballot.js, which has no DOM and no
+// network so it can be run against the same cases as the Dart tests. Keeping
+// them there rather than inline is deliberate: those rules have to agree with
+// VenueBallot on the host's phone exactly, and an untested copy is how two
+// screens at one table end up showing different winners.
+// ---------------------------------------------------------------------------
+let venues = [];
+let votes = [];
+
+// Turned off for good the first time the database answers "no such table" or
+// "no such column", so a page newer than its database quietly drops the
+// feature instead of showing errors at a dinner table.
+let votingSupported = true;
+
+// 42P01 no such table, 42703 no such column, PGRST20x schema cache miss.
+// All of them mean the same thing here: migration_venues.sql has not been run.
+const unsupported = (error) =>
+  !!error && ['42P01', '42703', 'PGRST204', 'PGRST205'].includes(error.code);
+
+async function refreshBallot(code) {
+  if (!votingSupported) return;
+
+  const v = await db.from('room_venues').select('*').eq('room_code', code);
+  if (unsupported(v.error)) { votingSupported = false; return; }
+  const t = await db.from('venue_votes').select('*').eq('room_code', code);
+  if (unsupported(t.error)) { votingSupported = false; return; }
+
+  // Any other error (a dropped connection) leaves the last known ballot on
+  // screen. An empty list would read as "the host found nowhere", which is a
+  // different and wrong message.
+  if (!v.error) venues = v.data || [];
+  if (!t.error) votes = t.data || [];
+  render();
+}
+
+async function toggleVenue(id) {
+  if (!room || !votingSupported) return;
+  const mine = isApprovedBy(votes, id, DEVICE);
+
+  // Optimistic: on cafe wifi a vote that waits for a round-trip feels broken,
+  // and the realtime update will replace this with the truth shortly.
+  votes = mine
+    ? votes.filter((v) => !(v.venue_id === id && v.device_id === DEVICE))
+    : [...votes, { venue_id: id, device_id: DEVICE }];
+  render();
+
+  const { error } = mine
+    ? await db.from('venue_votes').delete()
+        .eq('venue_id', id).eq('device_id', DEVICE)
+    : await db.from('venue_votes').upsert(
+        { room_code: room.code, venue_id: id, device_id: DEVICE },
+        { onConflict: 'venue_id,device_id' },
+      );
+
+  if (unsupported(error)) { votingSupported = false; render(); return; }
+  // Put the server's version back if the write did not land.
+  if (error) refreshBallot(room.code);
+}
+
+// A channel of its own, deliberately: if these tables are missing from the
+// realtime publication, a failure here must not take the room and player
+// subscriptions down with it.
+let ballotChannel = null;
+
+function subscribeBallot(code) {
+  if (!votingSupported) return;
+  try {
+    ballotChannel = db.channel(`ballot:${code}`)
+      .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'room_venues', filter: `room_code=eq.${code}` },
+          () => refreshBallot(code))
+      .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'venue_votes', filter: `room_code=eq.${code}` },
+          () => refreshBallot(code))
+      .subscribe();
+  } catch {
+    ballotChannel = null;
+  }
+}
+
+function leaveBallot() {
+  if (!ballotChannel) return;
+  try { db.removeChannel(ballotChannel); } catch { /* already gone */ }
+  ballotChannel = null;
+}
+
+function renderBallot() {
+  if (!votingSupported || !venues.length) { hide('ballot'); return; }
+  show('ballot');
+
+  // The host's decision arrives on the room row, not on the ballot. It is a
+  // decision somebody committed to, which is a different thing from the
+  // computed leader — the host may settle against the vote.
+  const decidedId = room ? room.decided_venue_id : null;
+  const decided = decidedId ? venues.find((v) => v.id === decidedId) : null;
+
+  if (decided) {
+    hide('venueList');
+    hide('ballotHint');
+    show('decided');
+    $('decidedName').textContent = decided.name;
+    return;
+  }
+
+  hide('decided');
+  show('venueList');
+  show('ballotHint');
+
+  const voters = votersCount(votes);
+  $('ballotHint').textContent = voters === 0
+    ? 'Tap everywhere you would happily go.'
+    : `${voters} ${voters === 1 ? 'person has' : 'people have'} voted · ` +
+      'the host closes it';
+
+  const dimmed = trailing(venues, votes);
+  const list = $('venueList');
+  list.innerHTML = '';
+
+  for (const v of ranked(venues, votes)) {
+    const mine = isApprovedBy(votes, v.id, DEVICE);
+    const row = document.createElement('button');
+    row.className = 'venue' +
+      (mine ? ' mine voted' : '') +
+      (dimmed.has(v.id) ? ' trailing' : '');
+
+    const body = document.createElement('span');
+    body.className = 'n';
+    const title = document.createElement('span');
+    // textContent throughout: place names come from a provider by way of the
+    // database, and none of that is trusted markup.
+    title.textContent = v.name || 'Unnamed';
+    const sub = document.createElement('span');
+    sub.className = 'sub';
+    sub.textContent = venueSubtitle(v);
+    body.append(title, sub);
+
+    const count = document.createElement('span');
+    count.className = 'count';
+    count.textContent = String(approvalsFor(votes, v.id));
+
+    row.append(body, count);
+    row.addEventListener('click', () => toggleVenue(v.id));
+    list.appendChild(row);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Room
 // ---------------------------------------------------------------------------
 function codeFromUrl() {
@@ -253,6 +415,9 @@ async function join() {
 
     await startSensors();
     startHeartbeat(code);
+    // Before subscribe(), so votingSupported is known and the ballot channel
+    // is only opened on a database that actually has those tables.
+    await refreshBallot(code);
     subscribe(code);
     hide('join');
     show('lobby');
@@ -316,6 +481,7 @@ function subscribe(code) {
     .subscribe();
 
   joinPresence(code);
+  subscribeBallot(code);
 }
 
 // Announce this browser on the room's presence channel.
@@ -351,7 +517,10 @@ function leavePresence() {
 
 // Leaving the page should look like leaving the table immediately, rather
 // than waiting for the socket to time out.
-window.addEventListener('pagehide', leavePresence);
+window.addEventListener('pagehide', () => {
+  leavePresence();
+  leaveBallot();
+});
 
 async function refreshPlayers(code) {
   const { data } = await db.from('room_players')
@@ -432,7 +601,10 @@ function playerList(el) {
 }
 
 function render() {
-  if (!$('lobby').classList.contains('hidden')) playerList($('lobbyList'));
+  if (!$('lobby').classList.contains('hidden')) {
+    playerList($('lobbyList'));
+    renderBallot();
+  }
   if ($('round').classList.contains('hidden')) return;
 
   playerList($('roundList'));

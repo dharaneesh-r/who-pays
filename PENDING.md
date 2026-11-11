@@ -39,6 +39,19 @@ Audited against the source on 2026-11-07, not from memory.
 | 16 | ~~No privacy policy~~ **WRITTEN** | [web_guest/privacy.html](web_guest/privacy.html), linked in Settings. **Still needs hosting** on Cloudflare before the Play listing can reference it |
 | 17 | **iOS is unconfigured** | The `ios/` folder exists but has no camera or motion usage strings in `Info.plist`, no AdMob id, and has never been built |
 
+## 🔵 Venue voting and bill splitting — new, 11 Nov 2026
+
+Spec and audit: [VENUES.md](VENUES.md) §12–§17.
+
+| # | What | Notes |
+|---|---|---|
+| 20 | **Location is gated off** | `GeolocatorLocationSource` is **built** (coarse, one fix, 15 s limit) but unused: needs `ACCESS_COARSE_LOCATION` uncommented in the manifest *and* `--dart-define=LOCATION=true`. Deliberate — declaring the permission restarts the Data Safety review, so it waits for the closed test. **Never run on a device** |
+| 21 | **Places need a key** | `GooglePlacesProvider` is **built and tested** (16 tests against recorded response shapes). Without `--dart-define=PLACES_KEY=…` the app uses the six fake restaurants, so a debug build spends nothing. Still needs an API key, a billing account with a **hard quota cap**, and a first real call — no live place data has ever been fetched |
+| 22 | **`migration_venues.sql` not applied** | Voting silently does nothing until it is run in the Supabase SQL editor |
+| 23 | ~~Guests cannot vote~~ **BUILT** | `web_guest/ballot.js` + a ballot in the lobby. The tally is tested against the Dart cases via `node --test test/guest_ballot_test.mjs` — not part of `flutter test`, so run it by hand. Degrades to hidden on a database without the migration |
+| 24 | **Neither new screen has a widget test** | Domain, session and provider layers are covered; see #18 |
+| 25 | **Android builds cannot be verified on this machine** | Not caused by any change here: the NDK directories under `%LOCALAPPDATA%/Android/Sdk/ndk` are empty stubs, so AGP fails while *configuring* `:app` — before any plugin is compiled. Pre-dates the `geolocator` dependency, and means its native side is untested. Fix is in README, "Gradle builds currently fail here" |
+
 ## 🟢 Test coverage
 
 | # | What | Notes |

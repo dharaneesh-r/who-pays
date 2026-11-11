@@ -1,7 +1,8 @@
 # Deploying the guest site
 
 Everything in this folder is a plain static site — no build step, no
-framework, no server. Three files do the work: `index.html`, `app.js`,
+framework, no server. Four files do the work: `index.html`, `app.js`,
+`ballot.js`,
 `privacy.html`.
 
 ---
@@ -41,6 +42,7 @@ already have the app installed.
 |---|---|
 | `index.html` | The join screen and the in-round screen |
 | `app.js` | Joining, realtime, presence, and the pick-up detector ported from the Flutter app |
+| `ballot.js` | The where-to-eat voting maths, ported from `VenueBallot`. Imported by `app.js` |
 | `privacy.html` | The privacy policy, served at `/privacy` |
 | `vercel.json` | Routing for Vercel — rewrites `/j/:code`, plus three security headers |
 | `_redirects` | The same routing for Cloudflare Pages |
@@ -96,6 +98,7 @@ Replace `<your-domain>` and open each one.
 | `<your-domain>/j/ABCD` | the same screen with **ABCD** already filled in |
 | `<your-domain>/privacy` | the privacy policy |
 | `<your-domain>/app.js` | JavaScript, not a 404 page |
+| `<your-domain>/ballot.js` | JavaScript, not a 404 page — `app.js` imports it and the page is blank without it |
 
 **`/j/ABCD` is the one that matters.** The other three work even on a broken
 deploy. If it 404s, the routing rule is not being applied — on Vercel that is

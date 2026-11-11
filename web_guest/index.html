@@ -62,6 +62,38 @@
     background: none; color: var(--muted); border: none;
     font-size: 15px; font-weight: 400; margin-top: 22px;
   }
+  /* Where to eat. A button rather than a li, because every row is tappable. */
+  .lbl {
+    font-size: 13px; letter-spacing: 2px; color: var(--muted);
+    font-weight: 800; margin: 22px 0 6px;
+  }
+  button.venue {
+    display: flex; align-items: center; gap: 10px; text-align: left;
+    background: var(--surface); color: var(--text); font-weight: 400;
+    border: 1px solid rgba(255,255,255,.10); padding: 12px 14px; margin-top: 8px;
+  }
+  button.venue.mine { border-color: var(--accent); background: rgba(255,179,0,.12); }
+  /* Dimmed, never hidden: one more vote is how a table rescues a place. */
+  button.venue.trailing { opacity: .45; }
+  .venue .n { flex: 1; min-width: 0; }
+  .venue .sub {
+    display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px;
+  }
+  .venue .count {
+    flex: none; width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px;
+    background: rgba(255,255,255,.06); color: var(--muted);
+  }
+  .venue.voted .count { background: rgba(255,179,0,.18); color: var(--accent); }
+  .decided {
+    border: 1px solid rgba(67,160,71,.5); background: rgba(67,160,71,.12);
+    border-radius: 14px; padding: 16px; margin-top: 12px;
+  }
+  .decided .where {
+    font-size: 12px; letter-spacing: 2px; color: var(--safe); font-weight: 800;
+  }
+  .decided .name { font-size: 22px; font-weight: 800; margin-top: 5px; }
 </style>
 </head>
 <body>
@@ -80,6 +112,22 @@
   <section id="lobby" class="mid hidden">
     <p class="muted">You're in. Waiting for the host to start…</p>
     <ul id="lobbyList"></ul>
+
+    <!-- Where to eat. Stays hidden until the host has found places, and on any
+         database without migration_venues.sql applied — the page has to keep
+         working against an older schema, because it deploys separately from
+         the app and may be newer than the database. -->
+    <div id="ballot" class="hidden">
+      <p class="lbl">WHERE TO EAT</p>
+      <p id="ballotHint" class="muted" style="font-size:13px">
+        Tap everywhere you'd happily go.
+      </p>
+      <div id="venueList"></div>
+      <div id="decided" class="decided hidden">
+        <div class="where">WE'RE GOING TO</div>
+        <div class="name" id="decidedName"></div>
+      </div>
+    </div>
   </section>
 
   <!-- Round -->

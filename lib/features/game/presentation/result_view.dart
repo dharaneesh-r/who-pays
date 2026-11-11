@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/feedback/alarm_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../bill/presentation/bill_split_screen.dart';
 import '../../paywall/application/ads_service.dart';
 import '../../room/application/room_session.dart';
 import '../../room/presentation/live_standings.dart';
@@ -134,6 +135,14 @@ class ResultView extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
           ],
+          // The bill turns up at the end of the round, so the split belongs
+          // here rather than behind a menu. Stake-aware: see BillSplitScreen.
+          OutlinedButton.icon(
+            onPressed: () => context.push(BillSplitScreen.path),
+            icon: const Icon(Icons.receipt_long_outlined),
+            label: const Text('SPLIT THE BILL'),
+          ),
+          const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: result == null
                 ? null

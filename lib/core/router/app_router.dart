@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/bill/presentation/bill_split_screen.dart';
 import '../../features/detector/presentation/detector_debug_screen.dart';
 import '../../features/detector/presentation/trace_screen.dart';
 import '../../features/duel/presentation/duel_screen.dart';
@@ -10,6 +11,7 @@ import '../../features/room/presentation/join_room_screen.dart';
 import '../../features/room/presentation/room_lobby_screen.dart';
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/stats/presentation/stats_screen.dart';
+import '../../features/venue/presentation/venue_ballot_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: HomeScreen.path,
@@ -33,6 +35,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: RoomLobbyScreen.path,
       builder: (_, _) => const RoomLobbyScreen(),
+    ),
+    GoRoute(
+      path: VenueBallotScreen.path,
+      builder: (_, _) => const VenueBallotScreen(),
+    ),
+    GoRoute(
+      path: BillSplitScreen.path,
+      builder: (_, _) => const BillSplitScreen(),
     ),
     GoRoute(
       path: DuelScreen.path,
