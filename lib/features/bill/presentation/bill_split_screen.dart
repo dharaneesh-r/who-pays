@@ -10,6 +10,7 @@ import '../../game/domain/game_models.dart';
 import '../../room/application/room_session.dart';
 import '../domain/bill_split.dart';
 import '../domain/money.dart';
+import '../domain/participant_seed.dart';
 
 /// Who owes what.
 ///
@@ -64,19 +65,22 @@ class _BillSplitScreenState extends ConsumerState<BillSplitScreen> {
   /// Seed the list once, from the room if there is one, otherwise from the
   /// saved player name. Done here rather than in initState because the room
   /// snapshot and the stored name both arrive asynchronously.
+  /// The rule itself lives in [seedParticipants], which is a pure function
+  /// with its own tests — it is fiddly, and getting it wrong once meant five
+  /// people at a table being told they owed nothing.
   void _seed(List<String> names, {required bool fromTable}) {
-    if (names.isEmpty || _edited) return;
-
-    // The room's list supersedes the solo fallback. At a table the snapshot
-    // often lands a frame or two after the saved name, and seeding once and
-    // for all left the split stuck on one person while five people waited to
-    // find out what they owed.
-    if (_seededFromTable) return;
-    if (_seeded && !fromTable) return;
+    final seeded = seedParticipants(
+      candidate: names,
+      fromTable: fromTable,
+      alreadySeeded: _seeded,
+      alreadySeededFromTable: _seededFromTable,
+      edited: _edited,
+    );
+    if (seeded == null) return;
 
     _seeded = true;
     _seededFromTable = fromTable;
-    _people = names;
+    _people = seeded;
   }
 
   @override

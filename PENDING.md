@@ -50,7 +50,7 @@ Spec and audit: [VENUES.md](VENUES.md) §12–§17.
 | 22 | **`migration_venues.sql` not applied** | Voting silently does nothing until it is run in the Supabase SQL editor |
 | 23 | ~~Guests cannot vote~~ **BUILT** | `web_guest/ballot.js` + a ballot in the lobby. The tally is tested against the Dart cases via `node --test test/guest_ballot_test.mjs` — not part of `flutter test`, so run it by hand. Degrades to hidden on a database without the migration |
 | 24 | **Neither new screen has a widget test** | Domain, session and provider layers are covered; see #18 |
-| 25 | **Android builds cannot be verified on this machine** | Not caused by any change here: the NDK directories under `%LOCALAPPDATA%/Android/Sdk/ndk` are empty stubs, so AGP fails while *configuring* `:app` — before any plugin is compiled. Pre-dates the `geolocator` dependency, and means its native side is untested. Fix is in README, "Gradle builds currently fail here" |
+| 25 | ~~Android builds cannot be verified~~ **FIXED** | Cause was the `ndkVersion` pin: c4eea3c bumped it to `28.2.13676358`, which was never installed, so Gradle failed while configuring `:app`. Installed it with `sdkmanager "ndk;28.2.13676358"`. `cmdline-tools` and the licences were never the problem. See README, "The NDK pin" |
 
 ## 🟢 Test coverage
 

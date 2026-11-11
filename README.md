@@ -75,27 +75,42 @@ pick-up detection, and detection is the product.
 Android Studio (or the standalone command-line tools) and run
 `flutter doctor --android-licenses` if Gradle builds fail.
 
-### Gradle builds currently fail here — empty NDK directories
+### The NDK pin
 
-Checked 11 Nov 2026. `tools/build.sh` and `flutter build apk` fail while
-*configuring* `:app`:
+Fixed 11 Nov 2026.
+
+`android/app/build.gradle.kts` pins `ndkVersion`. Commit c4eea3c changed that
+pin from `27.0.12077973` to `28.2.13676358`, but 28.2 had never been installed,
+so every Gradle build failed while *configuring* `:app` — before compiling
+anything:
 
 ```
 com.android.builder.sdk.InstallFailedException: Failed to install the following
 SDK components: ndk;28.2.13676358
 ```
 
-The cause is not the pin in `android/app/build.gradle.kts`. Both
-`%LOCALAPPDATA%/Android/Sdk/ndk/27.0.12077973` and
-`%LOCALAPPDATA%/Android/Sdk/ndk/28.2.13676358` exist but are **empty** — no
-`source.properties`, no binaries. AGP therefore cannot recognise either as
-installed, tries to install one, and cannot, because `cmdline-tools` is
-missing. SDK licences are already accepted, so that is not the blocker.
+AGP cannot install an SDK component itself, so it only reports the failure.
+`cmdline-tools` and the SDK licences were both present and fine; neither was
+the cause, despite what the error implies.
 
-Fix: install `cmdline-tools`, then `sdkmanager "ndk;28.2.13676358"` (or tick
-that NDK in Android Studio → SDK Manager → SDK Tools → show package details).
-Delete the empty directories first; a stub directory is what confuses AGP.
+Fixed by installing the pinned version:
 
-Until that is done **no Android build can be verified on this machine**, so any
-change touching a native plugin is untested on the native side even when
-`flutter analyze` and `flutter test` are clean.
+```bash
+"$LOCALAPPDATA/Android/Sdk/cmdline-tools/latest/bin/sdkmanager.bat" "ndk;28.2.13676358"
+```
+
+Verified: `flutter build apk --debug` now succeeds — `app-debug.apk`, 185 MB
+unstripped, which is normal for a debug build. That also confirms the
+`geolocator` native plugin assembles.
+
+Two things worth knowing if this recurs:
+
+- A failed install leaves `ndk/<version>/.installer/` behind and nothing else.
+  **Delete that stub before retrying** — a half-present directory is more
+  confusing than an absent one, and it is what makes the error look like a
+  permissions or licence problem.
+- `27.0.12077973` is also installed and complete, so pointing the pin back at
+  it is a zero-download alternative. The NDK is used here only to strip symbols
+  from prebuilt `.so` files with `llvm-strip` — no plugin in this project
+  compiles native code — so either version does the job. CONTEXT.md section 10
+  avoids NDK-dependent packages for exactly this reason.
