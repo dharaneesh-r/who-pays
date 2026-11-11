@@ -4,12 +4,15 @@ import 'package:geolocator/geolocator.dart';
 
 import 'location_source.dart';
 
-/// The real thing: one coarse fix from the phone.
+/// The real thing: one precise fix from the phone.
 ///
 /// Spec: VENUES.md §12, §16. Three rules this holds to deliberately:
 ///
-///   * **Coarse, not fine.** The search radius is 5 km. Street-level accuracy
-///     would be a bigger permission for no benefit.
+///   * **Precise.** Coarse carries 500 m to 1 km of error, which is larger
+///     than the differences the ballot asks people to judge — it showed
+///     "450 m" for somewhere that might be a kilometre away, and could sort a
+///     shop across the road behind one twice as far. A list about distance
+///     needs a fix better than the distances on it.
 ///   * **One fix, never a stream.** This app has no business watching anybody
 ///     move, and nothing is stored about where the phone has been.
 ///   * **Host only.** Guests read the candidate list out of `room_venues`, so
@@ -47,6 +50,10 @@ class GeolocatorLocationSource implements LocationSource {
       );
     }
 
+    // A user who grants only approximate location on Android 12+ still lands
+    // here as whileInUse, and that is deliberately not an error: the search
+    // works, the distances are simply softer, and nagging someone for making
+    // a considered privacy choice would be worse than a vaguer list.
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.unableToDetermine) {
       throw const LocationUnavailable(
@@ -57,8 +64,8 @@ class GeolocatorLocationSource implements LocationSource {
     try {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          // Coarse on purpose. See the class comment.
-          accuracy: LocationAccuracy.low,
+          // Precise on purpose. See the class comment.
+          accuracy: LocationAccuracy.high,
           timeLimit: _timeout,
         ),
       );

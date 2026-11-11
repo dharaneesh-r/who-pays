@@ -1,14 +1,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Supabase realtime rooms -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- Where to eat (VENUES.md §12). COARSE only, one fix, never in the
-         background: the search radius is 5 km, so street-level accuracy would
-         be a bigger permission for no benefit.
+    <!-- Where to eat (VENUES.md §12). One fix, never in the background.
 
-         Declared as of 11 Nov 2026. This MUST be reflected in the Play Data
-         Safety form: approximate location, collected, optional, purpose "app
-         functionality". Do not submit the listing without it. -->
+         FINE as of 11 Nov 2026. Coarse gives roughly 500 m to 1 km of error,
+         which made the distances on the ballot meaningless and could sort a
+         shop across the road behind one twice as far away. The whole point of
+         the list is "how far is it", so the fix has to be better than the
+         differences it is being used to judge.
+
+         COARSE is kept beside it: Android requires it to be declared when
+         FINE is, and a user who grants only approximate location still gets a
+         working, if vaguer, list.
+
+         This MUST be reflected in the Play Data Safety form: **precise**
+         location, collected, optional, purpose "app functionality". Do not
+         submit the listing without it. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <!-- Haptic feedback when a player is caught -->
     <uses-permission android:name="android.permission.VIBRATE"/>
     <!-- The accelerometer is required: the whole game is pick-up detection -->
