@@ -14,8 +14,14 @@ import '../data/venue_repository.dart';
 import '../domain/place_provider.dart';
 import '../domain/venue_models.dart';
 
-/// How far to look. From the owner's decision, VENUES.md §12.
-const searchRadiusM = 5000;
+/// How far to look.
+///
+/// 2 km as of 11 Nov 2026, down from 5 km. Two reasons, and the second was a
+/// surprise: nobody walks 5 km to dinner, and the wider box was actively
+/// *hurting* coverage — Nominatim caps a search at 40 results, so a 5 km box
+/// crowded out nearby places. Annapoorna sits 967 m away and was missing from
+/// a 5 km search; at 2 km it is there.
+const searchRadiusM = 2000;
 
 /// The ballot is capped because a 5 km radius in a city centre returns
 /// hundreds of restaurants, and a ballot of hundreds is not a ballot.

@@ -36,7 +36,34 @@ class NominatimPlaceProvider implements PlaceProvider {
 
   /// Keeps the worst case — every Overpass mirror dead, then this — inside
   /// about half a minute rather than two and a half.
-  static const _timeout = Duration(seconds: 12);
+  static const _timeout = Duration(seconds: 8);
+
+  /// Nominatim matches text, not categories, so one query for "restaurant"
+  /// misses most places. Measured within 2 km of Coimbatore town hall:
+  /// "restaurant" alone found 35, adding these found 80.
+  ///
+  /// "hotel" is deliberately absent. In Indian English it usually means an
+  /// eatery, but every one of the 20 results it returned was `tourism=hotel`
+  /// — somewhere to sleep. Eateries actually named "Hotel X" are tagged as
+  /// restaurants and come back from the other terms anyway.
+  static const _terms = ['restaurant', 'cafe', 'bakery'];
+
+  /// What counts as somewhere to eat. Anything else a text search drags in —
+  /// lodging above all — is dropped.
+  static const _foodTypes = {
+    'restaurant',
+    'cafe',
+    'fast_food',
+    'food_court',
+    'ice_cream',
+    'bakery',
+    'pastry',
+    'confectionery',
+    'bar',
+    'pub',
+    'canteen',
+    'deli',
+  };
 
   void close() => _client.close();
 
@@ -52,14 +79,36 @@ class NominatimPlaceProvider implements PlaceProvider {
   }) async {
     final radius = radiusM.clamp(100, 50000);
 
-    // A bounding box, because Nominatim has no radius. It is a square around
-    // the circle we actually want, so the corners reach about 1.4x further —
-    // the distance filter below throws those away.
+    // One request per term, in sequence. Nominatim's usage policy allows at
+    // most one request a second, so these are never fired in parallel.
+    final found = <String, Place>{};
+    for (final term in _terms) {
+      final places = await _search(term, lat, lng, radius);
+      for (final place in places) {
+        // First term wins a duplicate, so the more specific "restaurant"
+        // result beats the same shop found again under "bakery".
+        found.putIfAbsent(place.name.toLowerCase().trim(), () => place);
+      }
+    }
+
+    final places = found.values.toList()
+      ..sort(
+        (a, b) => (a.distanceM ?? 1 << 30).compareTo(b.distanceM ?? 1 << 30),
+      );
+    return places.take(limit).toList();
+  }
+
+  Future<List<Place>> _search(
+    String term,
+    double lat,
+    double lng,
+    int radius,
+  ) async {
     final dLat = radius / 111320.0;
     final dLng = radius / (111320.0 * math.cos(lat * math.pi / 180).abs());
 
     final url = _endpoint.replace(queryParameters: {
-      'q': 'restaurant',
+      'q': term,
       'format': 'jsonv2',
       // Nominatim caps this at 40. Ask for the lot, since the distance filter
       // and the name filter will both thin it out.
@@ -98,20 +147,10 @@ class NominatimPlaceProvider implements PlaceProvider {
       throw const PlaceLookupFailure('Unexpected reply from places.');
     }
 
-    final places = <Place>[
+    return [
       for (final row in rows)
         if (row is Map<String, dynamic>) ?_place(row, lat, lng, radius),
     ];
-
-    places.sort(
-      (a, b) => (a.distanceM ?? 1 << 30).compareTo(b.distanceM ?? 1 << 30),
-    );
-
-    final seen = <String>{};
-    return [
-      for (final p in places)
-        if (seen.add(p.name.toLowerCase().trim())) p,
-    ].take(limit).toList();
   }
 
   static Place? _place(
@@ -124,6 +163,11 @@ class NominatimPlaceProvider implements PlaceProvider {
     // Plenty of rows come back with an empty name — a numbered building, or
     // the street itself. Nothing to vote for.
     if (name is! String || name.trim().isEmpty) return null;
+
+    // A text search drags in whatever shares the word. Every result for
+    // "hotel" was somewhere to sleep; keep only somewhere to eat.
+    final type = row['type'];
+    if (type is! String || !_foodTypes.contains(type)) return null;
 
     final lat = double.tryParse('${row['lat']}');
     final lng = double.tryParse('${row['lon']}');

@@ -145,8 +145,10 @@ void main() {
       boot();
       await session().search();
 
-      // Five of the six fakes are inside 5 km.
-      expect(venue().candidates, hasLength(5));
+      // Two of the six fakes are inside the 2 km radius (450 m and 1.2 km);
+      // the rest sit at 2.6 km and beyond. If this number changes, check
+      // searchRadiusM before touching the test.
+      expect(venue().candidates, hasLength(2));
       expect(
         venue().candidates.map((c) => c.name),
         isNot(contains('Too Far Cafe')),
@@ -228,7 +230,7 @@ void main() {
       boot(room: atTable());
       await session().search();
 
-      expect(repo.published, hasLength(5));
+      expect(repo.published, hasLength(2));
       // The host gets the list the same way the guests do — through the
       // stream — so nobody is looking at a different ballot.
       expect(venue().candidates, isEmpty);
@@ -331,7 +333,7 @@ void main() {
       boot(room: atTable());
       await session().startOver();
       expect(repo.cleared, isTrue);
-      expect(repo.published, hasLength(5));
+      expect(repo.published, hasLength(2));
     });
   });
 }

@@ -16,6 +16,7 @@ Map<String, dynamic> row({
   String? name = 'Adyar Ananda Bhavan',
   double lat = 11.0100,
   double lng = 76.9700,
+  String type = 'restaurant',
   Map<String, String> address = const {'road': 'Bharathiyar Road'},
 }) {
   return {
@@ -25,6 +26,9 @@ Map<String, dynamic> row({
     'lat': '$lat',
     'lon': '$lng',
     'name': ?name,
+    // Nominatim's OSM category. The provider keeps only food ones.
+    'category': 'amenity',
+    'type': type,
     'display_name': 'long postal address, Coimbatore, Tamil Nadu, India',
     'address': address,
   };
@@ -54,7 +58,7 @@ void main() {
       final h = harness();
       await h.provider.nearby(lat: fromLat, lng: fromLng, radiusM: 5000);
 
-      final q = h.sent.single.url.queryParameters;
+      final q = h.sent.first.url.queryParameters;
       expect(q['bounded'], '1');
       expect(q['viewbox'], isNotNull);
       expect(q['addressdetails'], '1');
@@ -62,10 +66,24 @@ void main() {
       expect(q['limit'], '40');
     });
 
+    test('searches several terms, because it matches text not categories',
+        () async {
+      // One query for "restaurant" found 35 places within 2 km of Coimbatore
+      // town hall; these terms together found 80, Annapoorna among them.
+      final h = harness();
+      await h.provider.nearby(lat: fromLat, lng: fromLng);
+
+      final terms = h.sent.map((r) => r.url.queryParameters['q']).toList();
+      expect(terms, containsAll(['restaurant', 'cafe', 'bakery']));
+      // Never "hotel": every one of its 20 results was tourism=hotel,
+      // somewhere to sleep rather than eat.
+      expect(terms, isNot(contains('hotel')));
+    });
+
     test('identifies the app, as the usage policy requires', () async {
       final h = harness();
       await h.provider.nearby(lat: fromLat, lng: fromLng);
-      final agent = h.sent.single.headers['user-agent'] ?? '';
+      final agent = h.sent.first.headers['user-agent'] ?? '';
       expect(agent, contains('WhoPays'));
       // Never anything identifying the person using the app.
       expect(agent, isNot(contains('@')));
@@ -114,6 +132,26 @@ void main() {
       ]);
       final places = await h.provider.nearby(lat: fromLat, lng: fromLng);
       expect(places.map((p) => p.name), ['Closer', 'Further']);
+    });
+
+    test('keeps only places you can eat at', () async {
+      // A text search drags in whatever shares the word. Lodging must go.
+      final h = harness(body: [
+        row(osmId: 1, name: 'Hotel Annapoorna', type: 'restaurant'),
+        row(osmId: 2, name: 'Hotel CAG Pride', type: 'hotel'),
+        row(osmId: 3, name: 'Hotel Sindhuri lodge', type: 'hostel'),
+        row(osmId: 4, name: 'Krishna Bakery', type: 'bakery'),
+      ]);
+      final places = await h.provider.nearby(lat: fromLat, lng: fromLng);
+      expect(
+        places.map((p) => p.name),
+        containsAll(['Hotel Annapoorna', 'Krishna Bakery']),
+      );
+      expect(places.map((p) => p.name), isNot(contains('Hotel CAG Pride')));
+      expect(
+        places.map((p) => p.name),
+        isNot(contains('Hotel Sindhuri lodge')),
+      );
     });
 
     test('deduplicates by name', () async {

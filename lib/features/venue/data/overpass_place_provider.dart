@@ -42,7 +42,10 @@ class OverpassPlaceProvider implements PlaceProvider {
 
   /// "Hotel" in Indian English means an eatery, so this is deliberately
   /// broader than `restaurant` alone. `food_court` matters in malls.
-  static const _amenities = 'restaurant|cafe|fast_food|food_court';
+  static const _amenities =
+      'restaurant|cafe|fast_food|food_court|ice_cream';
+
+  static const _shops = 'bakery|pastry|confectionery';
 
   /// Short on purpose, and much shorter than the server-side `[timeout:25]`
   /// in the query.
@@ -73,10 +76,14 @@ class OverpassPlaceProvider implements PlaceProvider {
 
     // `out center` gives ways (a building mapped as an area) a single point,
     // so a restaurant mapped as a polygon is not silently dropped.
-    final query = '[out:json][timeout:25];'
+    // Bakeries and sweet shops are `shop=`, not `amenity=`, and in India they
+    // are somewhere people actually sit and eat.
+    final query = '[out:json][timeout:20];'
         '('
         'node["amenity"~"^($_amenities)\$"](around:$radius,$lat,$lng);'
         'way["amenity"~"^($_amenities)\$"](around:$radius,$lat,$lng);'
+        'node["shop"~"^($_shops)\$"](around:$radius,$lat,$lng);'
+        'way["shop"~"^($_shops)\$"](around:$radius,$lat,$lng);'
         ');'
         'out center ${(limit * 3).clamp(10, 120)};';
 
