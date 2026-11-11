@@ -33,6 +33,11 @@ class _BillSplitScreenState extends ConsumerState<BillSplitScreen> {
   final _amount = TextEditingController();
   final _newName = TextEditingController();
 
+  /// Kept so the field can take focus straight back after each name. Adding
+  /// five people at a table otherwise means five taps on the same box,
+  /// because clearing the controller drops the keyboard.
+  final _newNameFocus = FocusNode();
+
   /// Tip offered as whole percentages. Zero first, because tipping is not
   /// customary everywhere this ships and the default must not nudge.
   static const _tipOptions = [0, 5, 10, 15];
@@ -59,6 +64,7 @@ class _BillSplitScreenState extends ConsumerState<BillSplitScreen> {
   void dispose() {
     _amount.dispose();
     _newName.dispose();
+    _newNameFocus.dispose();
     super.dispose();
   }
 
@@ -195,6 +201,7 @@ class _BillSplitScreenState extends ConsumerState<BillSplitScreen> {
                 Expanded(
                   child: TextField(
                     controller: _newName,
+                    focusNode: _newNameFocus,
                     textCapitalization: TextCapitalization.words,
                     decoration: const InputDecoration(
                       hintText: 'Add someone',
@@ -248,6 +255,9 @@ class _BillSplitScreenState extends ConsumerState<BillSplitScreen> {
       if (!_people.contains(name)) _people = [..._people, name];
       _newName.clear();
     });
+    // Straight back to the field: a table is usually added to in one go, and
+    // re-tapping the same box between every name is needless friction.
+    _newNameFocus.requestFocus();
   }
 
   /// Plain text rather than an image: this gets pasted into a WhatsApp group

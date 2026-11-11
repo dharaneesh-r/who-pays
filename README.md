@@ -66,6 +66,26 @@ tools/build.sh appbundle --dart-define=PLACES_KEY=AIza... --dart-define=LOCATION
 `android/app/src/main/AndroidManifest.xml` — the flag alone does nothing, and
 the comment there says why it is off.
 
+## Running it in a browser
+
+Useful for looking at screens without a phone — the menus, the where-to-eat
+ballot and the bill split all work. Pick-up detection does **not**: a desktop
+browser has no accelerometer, so the round never arms. Detection can only be
+tested on a real phone.
+
+```bash
+flutter build web --no-tree-shake-icons
+```
+
+The flag is required for the same reason `tools/build.sh` passes it: this
+Flutter install is missing `const_finder`, and without it the web build fails
+with an `IconTreeShakerException` that says nothing about icons.
+
+Serve `build/web` over HTTP (not `file://`) and reach the screens directly by
+route, e.g. `/#/where` and `/#/split`. Note that Flutter's service worker
+caches aggressively — after a rebuild, serve on a different port or the browser
+will quietly keep running the old bundle.
+
 Needs a **real Android device** — emulator sensors are not reliable enough for
 pick-up detection, and detection is the product.
 
