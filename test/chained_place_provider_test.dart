@@ -110,6 +110,18 @@ void main() {
       expect((await chain.nearby(lat: 11, lng: 76)).single.name, 'X');
     });
 
+    test('one source down and another empty is not an error', () async {
+      // The case that broke a real search north of Coimbatore: no
+      // restaurants inside 2 km, Overpass down, Nominatim honestly empty.
+      // Throwing here stopped the caller widening the radius, so the table
+      // saw an error instead of the eleven places sitting 3 km away.
+      final chain = ChainedPlaceProvider([
+        _Source(failure: const PlaceLookupFailure('502')),
+        _Source(places: const []),
+      ]);
+      expect(await chain.nearby(lat: 11, lng: 76), isEmpty);
+    });
+
     test('all sources agreeing on nothing is an answer, not an error',
         () async {
       // A genuinely quiet neighbourhood. The screen says "nothing within

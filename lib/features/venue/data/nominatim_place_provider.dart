@@ -39,28 +39,29 @@ class NominatimPlaceProvider implements PlaceProvider {
   static const _timeout = Duration(seconds: 8);
 
   /// Nominatim matches text, not categories, so one query for "restaurant"
-  /// misses most places. Measured within 2 km of Coimbatore town hall:
-  /// "restaurant" alone found 35, adding these found 80.
+  /// misses most places. "mess" is here because it is what a great many
+  /// Indian eateries are called — it is the only term that finds Nandhana
+  /// Mess and saibaba mess.
   ///
   /// "hotel" is deliberately absent. In Indian English it usually means an
   /// eatery, but every one of the 20 results it returned was `tourism=hotel`
   /// — somewhere to sleep. Eateries actually named "Hotel X" are tagged as
-  /// restaurants and come back from the other terms anyway.
-  static const _terms = ['restaurant', 'cafe', 'bakery'];
+  /// restaurants and come back from the other terms anyway: Ravuthar biriyani
+  /// hotel and mani hotel both arrive via "restaurant".
+  static const _terms = ['restaurant', 'cafe', 'mess'];
 
-  /// What counts as somewhere to eat. Anything else a text search drags in —
-  /// lodging above all — is dropped.
+  /// Somewhere you eat a meal.
+  ///
+  /// Bakeries, cake shops and ice cream parlours are deliberately out. They
+  /// are not where a table goes for dinner, and in thinly mapped areas they
+  /// crowded the ballot — one search returned three bakeries and nothing
+  /// else. Lodging is out for the same reason it always was: a text search
+  /// for an eatery should not offer somewhere to sleep.
   static const _foodTypes = {
     'restaurant',
     'cafe',
     'fast_food',
     'food_court',
-    'ice_cream',
-    'bakery',
-    'pastry',
-    'confectionery',
-    'bar',
-    'pub',
     'canteen',
     'deli',
   };
@@ -82,14 +83,29 @@ class NominatimPlaceProvider implements PlaceProvider {
     // One request per term, in sequence. Nominatim's usage policy allows at
     // most one request a second, so these are never fired in parallel.
     final found = <String, Place>{};
+    var answered = 0;
+    PlaceLookupFailure? lastFailure;
+
     for (final term in _terms) {
-      final places = await _search(term, lat, lng, radius);
-      for (final place in places) {
-        // First term wins a duplicate, so the more specific "restaurant"
-        // result beats the same shop found again under "bakery".
-        found.putIfAbsent(place.name.toLowerCase().trim(), () => place);
+      // One slow or rate-limited term must not sink the whole search. The
+      // public Nominatim is sometimes seconds slow, and failing the provider
+      // outright meant the caller could not tell "nothing here" from "the
+      // service is down" — so it never widened the radius.
+      try {
+        final places = await _search(term, lat, lng, radius);
+        answered++;
+        for (final place in places) {
+          // First term wins a duplicate, so the more specific "restaurant"
+          // result beats the same shop found again under another term.
+          found.putIfAbsent(place.name.toLowerCase().trim(), () => place);
+        }
+      } on PlaceLookupFailure catch (e) {
+        lastFailure = e;
       }
     }
+
+    // Only a total washout is a failure.
+    if (answered == 0 && lastFailure != null) throw lastFailure;
 
     final places = found.values.toList()
       ..sort(

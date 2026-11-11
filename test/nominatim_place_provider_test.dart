@@ -74,7 +74,9 @@ void main() {
       await h.provider.nearby(lat: fromLat, lng: fromLng);
 
       final terms = h.sent.map((r) => r.url.queryParameters['q']).toList();
-      expect(terms, containsAll(['restaurant', 'cafe', 'bakery']));
+      // "mess" is what a great many Indian eateries are called, and the only
+      // term that finds Nandhana Mess or saibaba mess.
+      expect(terms, containsAll(['restaurant', 'cafe', 'mess']));
       // Never "hotel": every one of its 20 results was tourism=hotel,
       // somewhere to sleep rather than eat.
       expect(terms, isNot(contains('hotel')));
@@ -134,24 +136,30 @@ void main() {
       expect(places.map((p) => p.name), ['Closer', 'Further']);
     });
 
-    test('keeps only places you can eat at', () async {
-      // A text search drags in whatever shares the word. Lodging must go.
+    test('keeps meals, drops lodging and cake shops', () async {
+      // A text search drags in whatever shares the word. Lodging was never
+      // wanted; bakeries were dropped after a search north of Coimbatore
+      // returned three bakeries and no restaurants at all.
       final h = harness(body: [
         row(osmId: 1, name: 'Hotel Annapoorna', type: 'restaurant'),
-        row(osmId: 2, name: 'Hotel CAG Pride', type: 'hotel'),
-        row(osmId: 3, name: 'Hotel Sindhuri lodge', type: 'hostel'),
-        row(osmId: 4, name: 'Krishna Bakery', type: 'bakery'),
+        row(osmId: 2, name: 'Nandhana Mess', type: 'food_court'),
+        row(osmId: 3, name: 'Hotel CAG Pride', type: 'hotel'),
+        row(osmId: 4, name: 'Hotel Sindhuri lodge', type: 'hostel'),
+        row(osmId: 5, name: 'Krishna Bakery', type: 'bakery'),
+        row(osmId: 6, name: 'Boomerang Ice Creams', type: 'ice_cream'),
       ]);
-      final places = await h.provider.nearby(lat: fromLat, lng: fromLng);
-      expect(
-        places.map((p) => p.name),
-        containsAll(['Hotel Annapoorna', 'Krishna Bakery']),
-      );
-      expect(places.map((p) => p.name), isNot(contains('Hotel CAG Pride')));
-      expect(
-        places.map((p) => p.name),
-        isNot(contains('Hotel Sindhuri lodge')),
-      );
+      final names = (await h.provider.nearby(lat: fromLat, lng: fromLng))
+          .map((p) => p.name);
+
+      expect(names, containsAll(['Hotel Annapoorna', 'Nandhana Mess']));
+      for (final unwanted in [
+        'Hotel CAG Pride',
+        'Hotel Sindhuri lodge',
+        'Krishna Bakery',
+        'Boomerang Ice Creams',
+      ]) {
+        expect(names, isNot(contains(unwanted)));
+      }
     });
 
     test('deduplicates by name', () async {

@@ -119,8 +119,8 @@ class _Empty extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             canSearch
-                ? 'Find what is open within 5 km, then everyone votes for '
-                    'every place they are happy with.'
+                ? 'Find what is open nearby, then everyone votes for every '
+                    'place they are happy with.'
                 : 'Waiting for the host to find places nearby…',
             textAlign: TextAlign.center,
             style: text.bodyMedium?.copyWith(color: Colors.white60),

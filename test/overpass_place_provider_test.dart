@@ -311,6 +311,34 @@ void main() {
     );
   });
 
+  test('stops retrying dead mirrors for a short while', () async {
+    // A widening search runs the chain twice. With Overpass down that meant
+    // paying every mirror timeout twice: a measured search took 77 seconds,
+    // half of it waiting on servers already known to be dead.
+    var requests = 0;
+    final client = MockClient((_) async {
+      requests++;
+      return http.Response('bad gateway', 502);
+    });
+    final provider = OverpassPlaceProvider(
+      client: client,
+      endpoints: [Uri.parse('https://a.test/api'), Uri.parse('https://b.test/api')],
+    );
+
+    await expectLater(
+      provider.nearby(lat: fromLat, lng: fromLng),
+      throwsA(isA<PlaceLookupFailure>()),
+    );
+    expect(requests, 2, reason: 'both mirrors tried the first time');
+
+    // Second call, moments later: no further requests at all.
+    await expectLater(
+      provider.nearby(lat: fromLat, lng: fromLng),
+      throwsA(isA<PlaceLookupFailure>()),
+    );
+    expect(requests, 2, reason: 'dead mirrors are not tried again at once');
+  });
+
   test('credits OpenStreetMap, as the licence requires', () {
     expect(
       OverpassPlaceProvider().attribution,

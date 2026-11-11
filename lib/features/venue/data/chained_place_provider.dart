@@ -43,6 +43,14 @@ class ChainedPlaceProvider implements PlaceProvider {
   }) async {
     PlaceLookupFailure? lastFailure;
 
+    // Whether anything answered at all, even to say there is nothing here.
+    // One source being down while another reports an empty neighbourhood is
+    // not a failure, and treating it as one cost a real search: with no
+    // restaurants inside 2 km, Overpass down and Nominatim honestly empty,
+    // this threw — so the caller never got to widen the radius and the table
+    // saw an error instead of the eleven places sitting 3 km away.
+    var anyAnswered = false;
+
     for (final source in sources) {
       try {
         final places = await source.nearby(
@@ -51,6 +59,7 @@ class ChainedPlaceProvider implements PlaceProvider {
           radiusM: radiusM,
           limit: limit,
         );
+        anyAnswered = true;
         if (places.isNotEmpty) return places;
       } on PlaceLookupFailure catch (e) {
         lastFailure = e;
@@ -61,11 +70,12 @@ class ChainedPlaceProvider implements PlaceProvider {
       }
     }
 
-    // Every source failed outright: report it, so the screen can say so.
-    if (lastFailure != null) throw lastFailure;
+    // Nothing answered at all: report it, so the screen can say so.
+    if (!anyAnswered && lastFailure != null) throw lastFailure;
 
-    // Every source answered, and all of them had nothing. That is a real
-    // answer about a quiet neighbourhood, not an error.
+    // Something answered, and nothing had anywhere to eat. That is a real
+    // answer about a quiet neighbourhood, not an error — and the caller can
+    // act on it by widening the search.
     return const [];
   }
 }

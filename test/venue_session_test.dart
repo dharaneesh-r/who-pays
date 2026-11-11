@@ -145,10 +145,11 @@ void main() {
       boot();
       await session().search();
 
-      // Two of the six fakes are inside the 2 km radius (450 m and 1.2 km);
-      // the rest sit at 2.6 km and beyond. If this number changes, check
-      // searchRadiusM before touching the test.
-      expect(venue().candidates, hasLength(2));
+      // Only two fakes sit inside the 2 km radius, which is below the
+      // threshold, so the search widens to 5 km and finds five. If this
+      // number changes, check searchRadiusM and _widenedRadiusM before
+      // touching the test.
+      expect(venue().candidates, hasLength(5));
       expect(
         venue().candidates.map((c) => c.name),
         isNot(contains('Too Far Cafe')),
@@ -185,6 +186,34 @@ void main() {
 
       await session().reopen();
       expect(venue().decidedVenueId, isNull);
+    });
+
+    test('widens the search when the neighbourhood is thin', () async {
+      // Measured north of Coimbatore: 2 km held no restaurants at all, 5 km
+      // held eleven. A table staring at an empty ballot does not care which
+      // kind of neighbourhood it is standing in.
+      boot(
+        provider: const FakePlaceProvider(places: [
+          Place(placeId: 'near', name: 'The Only Close One', distanceM: 500),
+          Place(placeId: 'far1', name: 'Worth The Walk', distanceM: 4000),
+          Place(placeId: 'far2', name: 'Also Further', distanceM: 4500),
+        ]),
+      );
+      await session().search();
+
+      // Only one is inside 2 km, so the widened search ran and kept all three.
+      expect(venue().candidates, hasLength(3));
+    });
+
+    test('does not widen when 2 km already has enough', () async {
+      boot(
+        provider: FakePlaceProvider(places: [
+          for (var i = 0; i < 6; i++)
+            Place(placeId: 'p$i', name: 'Place $i', distanceM: 300 + i),
+        ]),
+      );
+      await session().search();
+      expect(venue().candidates, hasLength(6));
     });
 
     test('an empty result says so instead of showing a blank list', () async {
@@ -230,7 +259,7 @@ void main() {
       boot(room: atTable());
       await session().search();
 
-      expect(repo.published, hasLength(2));
+      expect(repo.published, hasLength(5));
       // The host gets the list the same way the guests do — through the
       // stream — so nobody is looking at a different ballot.
       expect(venue().candidates, isEmpty);
@@ -333,7 +362,7 @@ void main() {
       boot(room: atTable());
       await session().startOver();
       expect(repo.cleared, isTrue);
-      expect(repo.published, hasLength(2));
+      expect(repo.published, hasLength(5));
     });
   });
 }

@@ -42,10 +42,10 @@ class OverpassPlaceProvider implements PlaceProvider {
 
   /// "Hotel" in Indian English means an eatery, so this is deliberately
   /// broader than `restaurant` alone. `food_court` matters in malls.
-  static const _amenities =
-      'restaurant|cafe|fast_food|food_court|ice_cream';
-
-  static const _shops = 'bakery|pastry|confectionery';
+  /// Somewhere you eat a meal. Bakeries and ice cream parlours are out: they
+  /// are not where a table goes for dinner, and in thinly mapped areas they
+  /// crowded out the places that are.
+  static const _amenities = 'restaurant|cafe|fast_food|food_court';
 
   /// Short on purpose, and much shorter than the server-side `[timeout:25]`
   /// in the query.
@@ -59,6 +59,24 @@ class OverpassPlaceProvider implements PlaceProvider {
   /// Public Overpass instances are a shared volunteer resource. One request
   /// per dinner is well within fair use; polling would not be.
   static const _timeout = Duration(seconds: 6);
+
+  /// When every mirror last failed.
+  ///
+  /// A search that widens its radius runs this twice, and with Overpass down
+  /// that meant paying the full mirror timeout twice over: a measured search
+  /// took 77 seconds, 36 of them waiting on servers already known to be
+  /// dead. Once they have all failed, assume they still are for a short
+  /// while and let the next source answer immediately.
+  DateTime? _allFailedAt;
+
+  /// Long enough to cover one widening search, short enough that a recovered
+  /// Overpass is used again on the next round.
+  static const _sulk = Duration(minutes: 2);
+
+  bool get _skipping {
+    final at = _allFailedAt;
+    return at != null && DateTime.now().difference(at) < _sulk;
+  }
 
   void close() => _client.close();
 
@@ -76,16 +94,19 @@ class OverpassPlaceProvider implements PlaceProvider {
 
     // `out center` gives ways (a building mapped as an area) a single point,
     // so a restaurant mapped as a polygon is not silently dropped.
-    // Bakeries and sweet shops are `shop=`, not `amenity=`, and in India they
-    // are somewhere people actually sit and eat.
     final query = '[out:json][timeout:20];'
         '('
         'node["amenity"~"^($_amenities)\$"](around:$radius,$lat,$lng);'
         'way["amenity"~"^($_amenities)\$"](around:$radius,$lat,$lng);'
-        'node["shop"~"^($_shops)\$"](around:$radius,$lat,$lng);'
-        'way["shop"~"^($_shops)\$"](around:$radius,$lat,$lng);'
         ');'
         'out center ${(limit * 3).clamp(10, 120)};';
+
+    // Every mirror failed moments ago. Do not spend the timeouts again.
+    if (_skipping) {
+      throw const PlaceLookupFailure(
+        'The places service is busy. Try again in a moment.',
+      );
+    }
 
     // Try each mirror in turn. Only the last failure is reported, because by
     // then they are all down and the person just needs to know to pick a
@@ -126,9 +147,12 @@ class OverpassPlaceProvider implements PlaceProvider {
     }
 
     if (response == null) {
+      _allFailedAt = DateTime.now();
       throw lastFailure ??
           const PlaceLookupFailure('Could not reach the places service.');
     }
+    // One of them answered, so stop sulking.
+    _allFailedAt = null;
 
     final Map<String, dynamic> body;
     try {

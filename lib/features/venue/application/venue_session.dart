@@ -14,14 +14,28 @@ import '../data/venue_repository.dart';
 import '../domain/place_provider.dart';
 import '../domain/venue_models.dart';
 
-/// How far to look.
+/// How far to look first.
 ///
-/// 2 km as of 11 Nov 2026, down from 5 km. Two reasons, and the second was a
-/// surprise: nobody walks 5 km to dinner, and the wider box was actively
-/// *hurting* coverage — Nominatim caps a search at 40 results, so a 5 km box
-/// crowded out nearby places. Annapoorna sits 967 m away and was missing from
-/// a 5 km search; at 2 km it is there.
+/// 2 km is the radius people actually want: near enough to walk to, and tight
+/// enough that Nominatim's 40-result cap does not crowd out the places next
+/// door — Annapoorna sits 967 m away and was missing from a 5 km search but
+/// present at 2 km.
 const searchRadiusM = 2000;
+
+/// How far to stretch when 2 km is nearly empty.
+///
+/// Measured north of Coimbatore, restaurants only: 2 km held **nothing**,
+/// 3 km held one, 5 km held eleven. A 2 km radius is right in a city centre
+/// and useless in a thin suburb, and a table staring at an empty ballot does
+/// not care which it is standing in.
+///
+/// Only one extra step, straight to 5 km: each attempt is a fresh round of
+/// provider requests, and walking 2-3-5-8 would spend half a minute and a
+/// stack of requests to arrive at the same list.
+const _widenedRadiusM = 5000;
+
+/// Below this, the ballot is not worth voting on and the search widens.
+const _enoughCandidates = 5;
 
 /// The ballot is capped because a 5 km radius in a city centre returns
 /// hundreds of restaurants, and a ballot of hundreds is not a ballot.
@@ -197,12 +211,28 @@ class VenueSession extends Notifier<VenueSessionState> {
 
     try {
       final at = await ref.read(locationSourceProvider).current();
-      final places = await ref.read(placeProviderProvider).nearby(
-            lat: at.lat,
-            lng: at.lng,
-            radiusM: searchRadiusM,
-            limit: maxCandidates,
-          );
+      final provider = ref.read(placeProviderProvider);
+
+      var places = await provider.nearby(
+        lat: at.lat,
+        lng: at.lng,
+        radiusM: searchRadiusM,
+        limit: maxCandidates,
+      );
+
+      // Thin neighbourhood: stretch once rather than hand the table a ballot
+      // with two entries on it. The wider search includes everything the
+      // first one found, and the list is sorted by distance, so nearby places
+      // still come first.
+      if (places.length < _enoughCandidates) {
+        final wider = await provider.nearby(
+          lat: at.lat,
+          lng: at.lng,
+          radiusM: _widenedRadiusM,
+          limit: maxCandidates,
+        );
+        if (wider.length > places.length) places = wider;
+      }
 
       if (places.isEmpty) {
         state = state.copyWith(
